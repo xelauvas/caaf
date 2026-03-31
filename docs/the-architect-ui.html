@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE ARCHITECT — Ecosystem Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#02020a;--s1:#07071200;--s2:#0c0c1a;--card:#0f0f1e;
+  --border:#1c1c35;--border2:#252545;
+  --blue:#00b4ff;--teal:#00e5cc;--lime:#7fff00;--purple:#9966ff;
+  --red:#ff3333;--amber:#ffaa00;--pink:#ff69b4;
+  --text:#dde0ff;--muted:#4a4a70;--dim:#2a2a4a;
+  --mono:'JetBrains Mono',monospace;--disp:'Bebas Neue',sans-serif;--body:'Outfit',sans-serif;
+}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:var(--body);overflow:hidden}
+
+/* GRID BG */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(100,100,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(100,100,255,.025) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0;
+}
+
+/* LAYOUT */
+#app{display:flex;flex-direction:column;width:100vw;height:100vh;position:relative;z-index:1}
+
+/* HEADER */
+header{
+  display:flex;align-items:center;gap:0;
+  height:52px;border-bottom:1px solid var(--border);
+  background:rgba(2,2,10,.95);backdrop-filter:blur(8px);
+  flex-shrink:0;position:relative;z-index:10;
+}
+.h-logo{
+  font-family:var(--disp);font-size:28px;letter-spacing:.08em;color:var(--text);
+  padding:0 24px;border-right:1px solid var(--border);white-space:nowrap;
+  display:flex;align-items:center;gap:10px;
+}
+.h-logo-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(255,51,51,.6)}50%{box-shadow:0 0 0 6px rgba(255,51,51,0)}}
+
+.h-stats{
+  display:flex;align-items:center;gap:0;flex:1;padding:0 8px;overflow:hidden;
+}
+.h-stat{
+  display:flex;flex-direction:column;align-items:center;padding:0 20px;
+  border-right:1px solid var(--border);height:52px;justify-content:center;
+}
+.h-stat-num{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--text);line-height:1}
+.h-stat-label{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.h-stat-num.red{color:var(--red)}.h-stat-num.blue{color:var(--blue)}.h-stat-num.lime{color:var(--lime)}
+
+.h-live{
+  display:flex;align-items:center;gap:7px;padding:0 20px;border-right:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--lime);
+}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--lime);animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+.h-nav{display:flex;margin-left:auto;height:52px;border-left:1px solid var(--border)}
+.nav-btn{
+  font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;
+  padding:0 24px;border:none;background:none;color:var(--muted);cursor:pointer;
+  border-right:1px solid var(--border);transition:all .2s;border-bottom:2px solid transparent;
+  position:relative;
+}
+.nav-btn:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.nav-btn.active{color:var(--text);border-bottom-color:var(--blue)}
+
+/* MAIN AREA */
+#main{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* SIDEBAR LEFT — SIGNAL FEED */
+#feed-panel{
+  width:220px;flex-shrink:0;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  background:rgba(7,7,18,.6);
+}
+.panel-header{
+  font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted);padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
+}
+.panel-header-badge{
+  font-size:9px;padding:2px 6px;border-radius:2px;background:rgba(0,180,255,.15);
+  color:var(--blue);
+}
+#feed-list{flex:1;overflow-y:auto;padding:8px 0}
+#feed-list::-webkit-scrollbar{width:3px}
+#feed-list::-webkit-scrollbar-track{background:transparent}
+#feed-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.feed-item{
+  padding:10px 16px;border-bottom:1px solid rgba(28,28,53,.5);
+  cursor:pointer;transition:background .15s;
+}
+.feed-item:hover{background:rgba(255,255,255,.03)}
+.feed-time{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:4px}
+.feed-name{font-family:var(--mono);font-size:11px;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed-meta{font-family:var(--mono);font-size:9px;color:var(--muted);display:flex;gap:8px}
+.feed-cat{padding:1px 5px;border-radius:2px;font-size:8px;letter-spacing:.08em;text-transform:uppercase}
+.cat-agent{background:rgba(0,180,255,.15);color:var(--blue)}
+.cat-vector{background:rgba(0,229,204,.15);color:var(--teal)}
+.cat-tool{background:rgba(127,255,0,.12);color:var(--lime)}
+.cat-research{background:rgba(153,102,255,.15);color:var(--purple)}
+.cat-gap{background:rgba(255,51,51,.2);color:var(--red)}
+.feed-item.new{animation:feedIn .4s ease-out}
+@keyframes feedIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+
+/* CONTENT CENTER */
+#content{flex:1;position:relative;min-width:0;min-height:0;overflow:hidden}
+
+/* CANVAS */
+#map-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;display:block}
+
+/* CANVAS TOOLTIP */
+#tooltip{
+  position:absolute;pointer-events:none;display:none;z-index:50;
+  background:rgba(12,12,28,.95);border:1px solid var(--border2);
+  padding:10px 14px;border-radius:4px;max-width:220px;
+}
+.tt-name{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px}
+.tt-row{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;justify-content:space-between;gap:16px;margin-bottom:3px}
+.tt-val{color:var(--text)}
+
+/* CANVAS FILTER BAR */
+#filter-bar{
+  position:absolute;top:16px;left:50%;transform:translateX(-50%);
+  display:flex;gap:4px;z-index:20;
+  background:rgba(2,2,10,.85);border:1px solid var(--border);
+  border-radius:4px;padding:4px;
+}
+.filter-btn{
+  font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 12px;border-radius:3px;border:none;background:none;cursor:pointer;
+  color:var(--muted);transition:all .15s;
+}
+.filter-btn:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.filter-btn.active{color:var(--bg);font-weight:700}
+.filter-btn.f-all.active{background:var(--text);color:var(--bg)}
+.filter-btn.f-agent.active{background:var(--blue);color:#000}
+.filter-btn.f-vector.active{background:var(--teal);color:#000}
+.filter-btn.f-tool.active{background:var(--lime);color:#000}
+.filter-btn.f-research.active{background:var(--purple);color:#fff}
+.filter-btn.f-gap.active{background:var(--red);color:#fff}
+
+/* MAP LEGEND */
+#legend{
+  position:absolute;bottom:20px;left:20px;z-index:20;
+  background:rgba(2,2,10,.85);border:1px solid var(--border);
+  border-radius:4px;padding:14px 16px;
+}
+.legend-item{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.legend-item:last-child{margin-bottom:0}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-dot.lg{width:14px;height:14px}
+
+/* MAP MINI STATS */
+#map-stats{
+  position:absolute;top:16px;right:16px;z-index:20;
+  display:flex;flex-direction:column;gap:6px;
+}
+.map-stat-pill{
+  background:rgba(2,2,10,.85);border:1px solid var(--border);border-radius:3px;
+  padding:7px 12px;font-family:var(--mono);font-size:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.msp-dot{width:6px;height:6px;border-radius:50%}
+.msp-val{color:var(--text);font-weight:700}
+.msp-label{color:var(--muted)}
+
+/* INSPECTOR PANEL RIGHT */
+#inspector{
+  width:300px;flex-shrink:0;border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  background:rgba(7,7,18,.6);
+}
+#inspector-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:var(--muted);gap:12px;
+}
+.insp-icon{font-size:32px;opacity:.3}
+.insp-hint{font-family:var(--mono);font-size:11px;text-align:center;line-height:1.6;max-width:160px}
+#inspector-content{flex:1;overflow-y:auto;display:none}
+#inspector-content::-webkit-scrollbar{width:3px}
+#inspector-content::-webkit-scrollbar-track{background:transparent}
+#inspector-content::-webkit-scrollbar-thumb{background:var(--border)}
+.insp-header{padding:20px;border-bottom:1px solid var(--border)}
+.insp-cat-badge{
+  font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;
+  padding:3px 8px;border-radius:2px;display:inline-block;margin-bottom:10px;
+}
+.insp-name{font-family:var(--disp);font-size:26px;line-height:1;color:var(--text);margin-bottom:8px}
+.insp-desc{font-size:13px;color:var(--muted);line-height:1.6}
+.insp-body{padding:16px 20px}
+.insp-section{margin-bottom:20px}
+.insp-section-title{
+  font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);
+}
+.insp-row{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:8px;font-family:var(--mono);font-size:11px;
+}
+.insp-row-label{color:var(--muted)}
+.insp-row-val{color:var(--text);font-weight:700}
+.crit-bar-wrap{margin-bottom:16px}
+.crit-label{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between}
+.crit-score-big{font-family:var(--disp);font-size:48px;color:var(--red);line-height:1}
+.crit-bar-bg{width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px}
+.crit-bar-fill{height:100%;background:var(--red);border-radius:3px;transition:width .5s ease}
+.skill-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.skill-tag{
+  font-family:var(--mono);font-size:10px;padding:3px 8px;
+  border:1px solid var(--border2);border-radius:2px;color:var(--text);
+}
+.blocking-list{display:flex;flex-direction:column;gap:4px}
+.blocking-item{
+  font-family:var(--mono);font-size:11px;padding:6px 10px;
+  background:rgba(255,51,51,.08);border:1px solid rgba(255,51,51,.2);
+  border-radius:3px;color:var(--text);display:flex;justify-content:space-between;
+}
+.blocking-item span{color:var(--muted);font-size:10px}
+.claim-btn{
+  margin:0 20px 20px;padding:12px;background:var(--red);border:none;border-radius:3px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:#fff;cursor:pointer;font-weight:700;transition:all .2s;width:calc(100% - 40px);
+}
+.claim-btn:hover{background:#ff5555;transform:translateY(-1px)}
+.conn-list{display:flex;flex-direction:column;gap:4px}
+.conn-item{
+  font-family:var(--mono);font-size:11px;padding:6px 10px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:3px;color:var(--text);display:flex;align-items:center;gap:8px;cursor:pointer;
+  transition:background .15s;
+}
+.conn-item:hover{background:rgba(255,255,255,.06)}
+.conn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* GAPS VIEW */
+#gaps-view{
+  display:none;position:absolute;inset:0;overflow-y:auto;padding:24px;
+  background:var(--bg);
+}
+#gaps-view::-webkit-scrollbar{width:4px}
+#gaps-view::-webkit-scrollbar-thumb{background:var(--border)}
+.gaps-header{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin-bottom:24px;
+}
+.gaps-title{font-family:var(--disp);font-size:42px;color:var(--text)}
+.gaps-sub{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.gaps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.gap-card{
+  background:var(--card);border:1px solid var(--border);border-radius:4px;
+  padding:24px;transition:all .2s;cursor:pointer;
+}
+.gap-card:hover{border-color:rgba(255,51,51,.4);transform:translateY(-2px)}
+.gc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.gc-score{font-family:var(--disp);font-size:52px;line-height:1;color:var(--red)}
+.gc-status{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;padding:4px 8px;border-radius:2px}
+.status-open{background:rgba(255,51,51,.15);color:var(--red)}
+.status-claimed{background:rgba(255,170,0,.15);color:var(--amber)}
+.gc-title{font-family:var(--disp);font-size:22px;line-height:1.1;color:var(--text);margin-bottom:10px}
+.gc-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+.gc-bar-bg{width:100%;height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:16px}
+.gc-bar-fill{height:100%;background:var(--red);border-radius:2px}
+.gc-meta{display:flex;gap:16px}
+.gc-meta-item{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.gc-meta-item span{color:var(--blue)}
+.gc-blocking-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:10px;margin-top:10px;
+  padding:5px 10px;background:rgba(255,51,51,.1);border-radius:2px;color:var(--red);
+}
+
+/* SIGNALS VIEW */
+#signals-view{
+  display:none;position:absolute;inset:0;overflow-y:auto;padding:24px;
+  background:var(--bg);
+}
+.signals-stream{max-width:800px;margin:0 auto}
+.signals-title{font-family:var(--disp);font-size:42px;color:var(--text);margin-bottom:24px}
+.signal-row{
+  display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);
+  align-items:flex-start;
+}
+.sig-time{font-family:var(--mono);font-size:10px;color:var(--muted);width:70px;flex-shrink:0;margin-top:2px}
+.sig-icon{width:32px;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sig-body{flex:1}
+.sig-title{font-family:var(--mono);font-size:13px;color:var(--text);margin-bottom:4px}
+.sig-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.sig-tags{display:flex;gap:6px;margin-top:8px}
+
+/* BOTTOM TICKER */
+#ticker{
+  height:36px;border-top:1px solid var(--border);flex-shrink:0;
+  background:rgba(2,2,10,.95);overflow:hidden;position:relative;
+  display:flex;align-items:center;
+}
+.ticker-label{
+  font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--red);padding:0 16px;border-right:1px solid var(--border);
+  white-space:nowrap;flex-shrink:0;
+}
+.ticker-track{
+  display:flex;align-items:center;gap:0;animation:ticker-scroll 45s linear infinite;
+  white-space:nowrap;
+}
+@keyframes ticker-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-item{
+  font-family:var(--mono);font-size:10px;color:var(--muted);padding:0 32px 0 0;
+  display:flex;align-items:center;gap:12px;
+}
+.ticker-item .ti-name{color:var(--text)}
+.ticker-item .ti-score{color:var(--red);font-weight:700}
+.ticker-sep{color:var(--border2);margin:0 16px}
+
+/* SELECTED NODE RING (canvas overlay) */
+#sel-overlay{position:absolute;pointer-events:none;z-index:15;display:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="h-logo">
+      <div class="h-logo-dot"></div>
+      THE ARCHITECT
+    </div>
+    <div class="h-stats">
+      <div class="h-stat">
+        <div class="h-stat-num blue" id="stat-repos">12,847</div>
+        <div class="h-stat-label">Repos Mapped</div>
+      </div>
+      <div class="h-stat">
+        <div class="h-stat-num red" id="stat-gaps">31</div>
+        <div class="h-stat-label">Critical Gaps</div>
+      </div>
+      <div class="h-stat">
+        <div class="h-stat-num" id="stat-dupes">247</div>
+        <div class="h-stat-label">Duplicates Found</div>
+      </div>
+      <div class="h-stat">
+        <div class="h-stat-num lime" id="stat-ingested">8,442</div>
+        <div class="h-stat-label">Ingested Today</div>
+      </div>
+      <div class="h-stat">
+        <div class="h-stat-num" style="color:var(--amber)" id="stat-blocked">423</div>
+        <div class="h-stat-label">Projects Blocked</div>
+      </div>
+    </div>
+    <div class="h-live"><div class="live-dot"></div>LIVE</div>
+    <nav class="h-nav">
+      <button class="nav-btn active" onclick="showView('map')">MAP</button>
+      <button class="nav-btn" onclick="showView('gaps')">GAPS</button>
+      <button class="nav-btn" onclick="showView('signals')">SIGNALS</button>
+    </nav>
+  </header>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- SIGNAL FEED (left) -->
+    <div id="feed-panel">
+      <div class="panel-header">
+        Signal Feed
+        <span class="panel-header-badge">LIVE</span>
+      </div>
+      <div id="feed-list"></div>
+    </div>
+
+    <!-- CONTENT CENTER -->
+    <div id="content">
+
+      <!-- CANVAS MAP VIEW -->
+      <canvas id="map-canvas"></canvas>
+
+      <!-- FILTER BAR -->
+      <div id="filter-bar">
+        <button class="filter-btn f-all active" onclick="setFilter('all')">All</button>
+        <button class="filter-btn f-agent" onclick="setFilter('agent')" style="color:var(--blue)">Agents</button>
+        <button class="filter-btn f-vector" onclick="setFilter('vector')" style="color:var(--teal)">Vector DB</button>
+        <button class="filter-btn f-tool" onclick="setFilter('tool')" style="color:var(--lime)">Tools</button>
+        <button class="filter-btn f-research" onclick="setFilter('research')" style="color:var(--purple)">Research</button>
+        <button class="filter-btn f-gap" onclick="setFilter('gap')" style="color:var(--red)">Gaps Only</button>
+      </div>
+
+      <!-- MAP LEGEND -->
+      <div id="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00b4ff"></div>Agent Frameworks</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00e5cc"></div>Vector Databases</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#7fff00"></div>LLM Tools</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#9966ff"></div>Research Papers</div>
+        <div class="legend-item"><div class="legend-dot lg" style="background:#ff3333"></div>Critical Gaps</div>
+      </div>
+
+      <!-- MAP MINI STATS -->
+      <div id="map-stats">
+        <div class="map-stat-pill"><div class="msp-dot" style="background:var(--red)"></div><span class="msp-val">9</span><span class="msp-label">gaps visible</span></div>
+        <div class="map-stat-pill"><div class="msp-dot" style="background:var(--blue)"></div><span class="msp-val" id="map-nodes-count">183</span><span class="msp-label">nodes</span></div>
+        <div class="map-stat-pill"><div class="msp-dot" style="background:var(--muted)"></div><span class="msp-val" id="map-edges-count">412</span><span class="msp-label">edges</span></div>
+      </div>
+
+      <!-- TOOLTIP -->
+      <div id="tooltip">
+        <div class="tt-name" id="tt-name"></div>
+        <div class="tt-row"><span>Category</span><span class="tt-val" id="tt-cat"></span></div>
+        <div class="tt-row" id="tt-stars-row"><span>Stars</span><span class="tt-val" id="tt-stars"></span></div>
+        <div class="tt-row" id="tt-crit-row"><span>Criticality</span><span class="tt-val" id="tt-crit" style="color:var(--red)"></span></div>
+        <div class="tt-row" id="tt-block-row"><span>Blocking</span><span class="tt-val" id="tt-block" style="color:var(--amber)"></span></div>
+      </div>
+
+      <!-- GAPS VIEW -->
+      <div id="gaps-view">
+        <div class="gaps-header">
+          <div class="gaps-title">CRITICAL GAPS</div>
+          <div class="gaps-sub">31 identified · 2 claimed · 29 open</div>
+        </div>
+        <div class="gaps-grid" id="gaps-grid"></div>
+      </div>
+
+      <!-- SIGNALS VIEW -->
+      <div id="signals-view">
+        <div class="signals-stream">
+          <div class="signals-title">SIGNAL STREAM</div>
+          <div id="signals-list"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- INSPECTOR (right) -->
+    <div id="inspector">
+      <div class="panel-header">Inspector</div>
+      <div id="inspector-empty">
+        <div class="insp-icon">⊕</div>
+        <div class="insp-hint">Click any node on the map to inspect it</div>
+      </div>
+      <div id="inspector-content"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM TICKER -->
+  <div id="ticker">
+    <div class="ticker-label">CRITICAL GAPS</div>
+    <div style="overflow:hidden;flex:1">
+      <div class="ticker-track" id="ticker-track"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const C = {
+  agent:    '#00b4ff',
+  vector:   '#00e5cc',
+  tool:     '#7fff00',
+  research: '#9966ff',
+  gap:      '#ff3333',
+};
+
+const AGENTS = ['AutoGen','CrewAI','LangChain','LlamaIndex','MetaGPT','Haystack','DSPy','Agno','Swarm','Agency Swarm','Semantic Kernel','OpenClaw','Botpress','Rasa','TaskWeaver','SuperAGI','Ix','BabyAGI','CAMEL','OpenAgents','XAgent','AgentGPT','WorkflowAI','MultiOn','NovaSky','HyperWrite','Julius','Letta','MemGPT','Control Flow','Phidata','Smolagents','PocketFlow','Composio','E2B','Daytona','Substrate'];
+const VECTORS = ['Chroma','Qdrant','Weaviate','Milvus','Pinecone','pgvector','Faiss','Annoy','Vespa','LanceDB','Marqo','SingleStore','Turbopuffer','MyScale','Vald','Deeplake','Txtai','Redis VSS','OpenSearch','Elasticsearch'];
+const TOOLS = ['LiteLLM','vLLM','Ollama','Guidance','Outlines','LMQL','PromptLayer','Weave','LangFuse','Phoenix','Helicone','Braintrust','Giskard','Ragas','DeepEval','Trulens','WhyLabs','EvalPlus','OpenCompass','lm-eval-harness','AdalFlow','Instructor','Mirascope','PydanticAI','Marvin','BAML'];
+const RESEARCH = ['Attention Is All You Need','RLHF Paper','Constitutional AI','Chain of Thought','Tool-Augmented LMs','ReAct','Reflexion','Tree of Thoughts','Self-Consistency','RAG Paper','HyperAgent','AgentBench','WebArena','SWE-bench','MMLU','HellaSwag'];
+const GAPS_DATA = [
+  {name:'Agent Trust Verification Protocol',criticality:9.3,effort:8,blocking:23,skills:['cryptography','distributed-systems','rust'],desc:'No standard way for AI agents to verify identity without central authority.',status:'open',blockingProjects:['AutoGen','CrewAI','MetaGPT','Agency Swarm','SuperAGI']},
+  {name:'Portable Agent Memory Standard',criticality:8.8,effort:6,blocking:31,skills:['protocol-design','python','storage'],desc:'Agent memory locked to each framework. No portable format exists.',status:'open',blockingProjects:['MemGPT','Letta','AutoGen','LangChain','Phidata']},
+  {name:'Agent-to-Agent Payment Rail',criticality:8.4,effort:14,blocking:18,skills:['payments','rust','protocol-design'],desc:'Agents can commission work but have no native payment mechanism.',status:'open',blockingProjects:['OpenClaw','Agency Swarm','E2B','Composio']},
+  {name:'Interpretability Primitive Library',criticality:7.9,effort:10,blocking:14,skills:['python','ml-research','pytorch'],desc:'Every interpretability tool reinvents basic building blocks from scratch.',status:'claimed',blockingProjects:['WhyLabs','Phoenix','Weave','Giskard']},
+  {name:'Multi-Agent Conflict Resolution',criticality:7.6,effort:12,blocking:11,skills:['game-theory','distributed-systems','python'],desc:'No protocol for agent negotiation without human mediation.',status:'open',blockingProjects:['MetaGPT','CAMEL','OpenAgents','TaskWeaver']},
+  {name:'Compute Cost Attribution Standard',criticality:7.1,effort:4,blocking:9,skills:['python','accounting','api-design'],desc:'No standard maps compute costs to real energy. Every company invents its own.',status:'open',blockingProjects:['Helicone','PromptLayer','LangFuse','Braintrust']},
+  {name:'Universal Agent Task Format',criticality:6.9,effort:5,blocking:22,skills:['protocol-design','json-schema','python'],desc:'Task definitions incompatible across frameworks. Massive duplication.',status:'open',blockingProjects:['AutoGen','CrewAI','Agno','Swarm','Botpress']},
+  {name:'Real-Time Agent State Streaming Protocol',criticality:6.4,effort:7,blocking:8,skills:['websockets','rust','protocol-design'],desc:'Monitoring agent execution requires polling. No push-based state protocol.',status:'open',blockingProjects:['Weave','Phoenix','LangFuse','Trulens']},
+  {name:'Cross-Framework Tool Registry',criticality:6.1,effort:6,blocking:19,skills:['python','api-design','registry'],desc:'Every agent framework has its own tool format. Tools cannot be shared.',status:'open',blockingProjects:['LangChain','LlamaIndex','Agno','Composio','E2B']},
+];
+
+let nodes = [];
+let edges = [];
+let selectedNode = null;
+let hoveredNode = null;
+let currentFilter = 'all';
+let dragging = null;
+let dragOffset = {x:0,y:0};
+let animFrame;
+let canvas, ctx, W, H;
+let dpr = window.devicePixelRatio || 1;
+
+function initNodes(){
+  nodes = [];
+  edges = [];
+  let id = 0;
+  function addGroup(names, cat, starsRange){
+    names.forEach(name => {
+      const stars = Math.floor(starsRange[0] + Math.random() * (starsRange[1]-starsRange[0]));
+      nodes.push({
+        id: id++, name, cat, stars,
+        x: Math.random(), y: Math.random(),
+        vx:0, vy:0,
+        r: Math.max(4, Math.min(14, 4 + Math.log(stars/500+1)*2.5)),
+        alpha: 1
+      });
+    });
+  }
+  addGroup(AGENTS, 'agent', [800, 42000]);
+  addGroup(VECTORS, 'vector', [500, 20000]);
+  addGroup(TOOLS, 'tool', [300, 16000]);
+  addGroup(RESEARCH, 'research', [0, 5000]);
+  GAPS_DATA.forEach(g => {
+    nodes.push({
+      id: id++, name:g.name, cat:'gap',
+      criticality:g.criticality, effort:g.effort, blocking:g.blocking,
+      skills:g.skills, desc:g.desc, status:g.status, blockingProjects:g.blockingProjects,
+      x: Math.random(), y: Math.random(),
+      vx:0, vy:0,
+      r: 16, alpha: 1,
+      pulse: Math.random()*Math.PI*2
+    });
+  });
+
+  // Create edges — gaps connect to their blockers, plus random project connections
+  const agentNodes = nodes.filter(n=>n.cat==='agent');
+  const vectorNodes = nodes.filter(n=>n.cat==='vector');
+  const toolNodes = nodes.filter(n=>n.cat==='tool');
+  const gapNodes = nodes.filter(n=>n.cat==='gap');
+
+  // Agent ↔ Agent connections
+  agentNodes.forEach((n,i) => {
+    const k = 2 + Math.floor(Math.random()*3);
+    for(let j=0;j<k;j++){
+      const t = agentNodes[Math.floor(Math.random()*agentNodes.length)];
+      if(t.id!==n.id) edges.push({a:n.id, b:t.id, type:'dep'});
+    }
+  });
+  // Agent → Vector
+  agentNodes.forEach(n => {
+    if(Math.random()>.4){
+      const t = vectorNodes[Math.floor(Math.random()*vectorNodes.length)];
+      edges.push({a:n.id, b:t.id, type:'uses'});
+    }
+  });
+  // Agent → Tool
+  agentNodes.forEach(n => {
+    if(Math.random()>.5){
+      const t = toolNodes[Math.floor(Math.random()*toolNodes.length)];
+      edges.push({a:n.id, b:t.id, type:'uses'});
+    }
+  });
+  // Gap → blocker connections
+  gapNodes.forEach(gn => {
+    const blockers = gn.blockingProjects||[];
+    blockers.forEach(bName => {
+      const target = nodes.find(n=>n.name===bName);
+      if(target) edges.push({a:gn.id, b:target.id, type:'blocks'});
+    });
+    // Add extra random connections
+    const k = 3+Math.floor(Math.random()*4);
+    for(let i=0;i<k;i++){
+      const t = agentNodes[Math.floor(Math.random()*agentNodes.length)];
+      edges.push({a:gn.id, b:t.id, type:'blocks'});
+    }
+  });
+
+  document.getElementById('map-nodes-count').textContent = nodes.length;
+  document.getElementById('map-edges-count').textContent = edges.length;
+}
+
+// Build adjacency for hover highlight
+function getConnectedIds(nodeId){
+  const ids = new Set();
+  edges.forEach(e=>{
+    if(e.a===nodeId) ids.add(e.b);
+    if(e.b===nodeId) ids.add(e.a);
+  });
+  return ids;
+}
+
+function initCanvas(){
+  canvas = document.getElementById('map-canvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+}
+
+function resizeCanvas(){
+  const rect = canvas.parentElement.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  // Place nodes in canvas coords
+  nodes.forEach(n => {
+    if(n.x<=1) { n.x = n.x*W*0.8 + W*0.1; n.y = n.y*H*0.8 + H*0.1; }
+  });
+}
+
+let simAlpha = 1.0;
+function simulate(){
+  if(simAlpha < 0.005) simAlpha = 0.005;
+  const REP = 1200 * simAlpha;
+  const SPR = 0.008 * simAlpha;
+  const SPL = Math.min(W,H)*0.18;
+  const DAMP = 0.85;
+  const MV = 10;
+
+  // Repulsion
+  for(let i=0;i<nodes.length;i++){
+    for(let j=i+1;j<nodes.length;j++){
+      const a=nodes[i], b=nodes[j];
+      const dx=b.x-a.x, dy=b.y-a.y;
+      const d2=dx*dx+dy*dy;
+      if(d2<1) continue;
+      const d=Math.sqrt(d2);
+      const f=REP/(d2);
+      const fx=dx/d*f, fy=dy/d*f;
+      a.vx-=fx; a.vy-=fy;
+      b.vx+=fx; b.vy+=fy;
+    }
+  }
+
+  // Spring attraction along edges
+  edges.forEach(e=>{
+    const a=nodes.find(n=>n.id===e.a), b=nodes.find(n=>n.id===e.b);
+    if(!a||!b) return;
+    const dx=b.x-a.x, dy=b.y-a.y;
+    const d=Math.sqrt(dx*dx+dy*dy)||1;
+    const f=(d-SPL)*SPR;
+    const fx=dx/d*f, fy=dy/d*f;
+    a.vx+=fx; a.vy+=fy;
+    b.vx-=fx; b.vy-=fy;
+  });
+
+  // Center gravity
+  const cx=W/2, cy=H/2;
+  nodes.forEach(n=>{
+    n.vx+=(cx-n.x)*0.0006*simAlpha;
+    n.vy+=(cy-n.y)*0.0006*simAlpha;
+  });
+
+  // Integrate
+  nodes.forEach(n=>{
+    if(dragging&&n.id===dragging) return;
+    n.vx*=DAMP; n.vy*=DAMP;
+    n.vx=Math.max(-MV,Math.min(MV,n.vx));
+    n.vy=Math.max(-MV,Math.min(MV,n.vy));
+    n.x+=n.vx; n.y+=n.vy;
+    n.x=Math.max(n.r+4, Math.min(W-n.r-4, n.x));
+    n.y=Math.max(n.r+4, Math.min(H-n.r-4, n.y));
+  });
+
+  simAlpha *= 0.995;
+}
+
+let frame=0;
+function render(){
+  frame++;
+  ctx.clearRect(0,0,W,H);
+
+  const connectedToHover = hoveredNode ? getConnectedIds(hoveredNode.id) : new Set();
+  const connectedToSel = selectedNode ? getConnectedIds(selectedNode.id) : new Set();
+
+  // Filter active nodes
+  const visibleNodes = new Set(nodes.filter(n=>{
+    if(currentFilter==='all') return true;
+    return n.cat===currentFilter;
+  }).map(n=>n.id));
+
+  // Draw edges
+  edges.forEach(e=>{
+    const a=nodes.find(n=>n.id===e.a), b=nodes.find(n=>n.id===e.b);
+    if(!a||!b) return;
+    if(!visibleNodes.has(a.id)||!visibleNodes.has(b.id)) return;
+
+    const isHighlighted = hoveredNode && (connectedToHover.has(a.id)||connectedToHover.has(b.id));
+    const isSelected = selectedNode && (connectedToSel.has(a.id)||connectedToSel.has(b.id));
+    const isBlockEdge = e.type==='blocks';
+
+    let alpha = 0.05;
+    if(isHighlighted) alpha = 0.4;
+    else if(isSelected) alpha = 0.25;
+
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = isBlockEdge
+      ? `rgba(255,51,51,${alpha*2})`
+      : `rgba(255,255,255,${alpha})`;
+    ctx.lineWidth = isHighlighted||isSelected ? 1.5 : 0.5;
+    ctx.stroke();
+  });
+
+  // Draw nodes
+  nodes.forEach(n=>{
+    if(!visibleNodes.has(n.id)) return;
+
+    const isHov = hoveredNode&&hoveredNode.id===n.id;
+    const isSel = selectedNode&&selectedNode.id===n.id;
+    const isConn = connectedToHover.has(n.id)||connectedToSel.has(n.id);
+    const col = C[n.cat]||'#ffffff';
+
+    let r = n.r;
+    if(isHov||isSel) r *= 1.3;
+
+    // Gap pulse ring
+    if(n.cat==='gap'){
+      n.pulse = (n.pulse||0) + 0.04;
+      const pr = r + 6 + Math.sin(n.pulse)*4;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, pr, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(255,51,51,${0.3+Math.sin(n.pulse)*0.15})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // Selected ring
+    if(isSel){
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r+8, 0, Math.PI*2);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Main circle
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI*2);
+    const dimmed = (hoveredNode||selectedNode) && !isHov && !isSel && !isConn;
+    const baseAlpha = dimmed ? 0.2 : 1;
+    ctx.fillStyle = col+Math.round(baseAlpha*255).toString(16).padStart(2,'0');
+    ctx.fill();
+
+    // Inner circle (darker) for depth
+    if(r > 7){
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r*0.5, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fill();
+    }
+
+    // Label for large nodes or hovered
+    const showLabel = n.r > 10 || isHov || isSel || n.cat==='gap';
+    if(showLabel){
+      ctx.font = `${n.cat==='gap'?'bold ':''}${Math.max(9,r*0.7)}px 'JetBrains Mono',monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = dimmed ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.9)';
+      const shortName = n.name.length > 14 ? n.name.split(' ')[0] : n.name;
+      ctx.fillText(shortName, n.x, n.y + r + 13);
+    }
+  });
+}
+
+function loop(){
+  simulate();
+  render();
+  animFrame = requestAnimationFrame(loop);
+}
+
+// MOUSE INTERACTION
+function getNodeAt(mx, my){
+  for(let i=nodes.length-1;i>=0;i--){
+    const n=nodes[i];
+    const dx=n.x-mx, dy=n.y-my;
+    if(dx*dx+dy*dy <= (n.r+4)*(n.r+4)) return n;
+  }
+  return null;
+}
+
+canvas && canvas.addEventListener('mousemove', e=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+  if(dragging!==null){
+    const n=nodes.find(n=>n.id===dragging);
+    if(n){n.x=mx-dragOffset.x;n.y=my-dragOffset.y;}
+    return;
+  }
+  const found = getNodeAt(mx, my);
+  if(found !== hoveredNode){
+    hoveredNode = found;
+    canvas.style.cursor = found ? 'pointer' : 'crosshair';
+    if(found){
+      const tt = document.getElementById('tooltip');
+      tt.style.display='block';
+      tt.style.left=(mx+18)+'px';
+      tt.style.top=(my-40)+'px';
+      document.getElementById('tt-name').textContent = found.name;
+      document.getElementById('tt-cat').textContent = found.cat.toUpperCase();
+      document.getElementById('tt-cat').style.color = C[found.cat];
+      if(found.cat==='gap'){
+        document.getElementById('tt-stars-row').style.display='none';
+        document.getElementById('tt-crit-row').style.display='flex';
+        document.getElementById('tt-block-row').style.display='flex';
+        document.getElementById('tt-crit').textContent = found.criticality+'/10';
+        document.getElementById('tt-block').textContent = found.blocking+' projects';
+      } else {
+        document.getElementById('tt-stars-row').style.display='flex';
+        document.getElementById('tt-crit-row').style.display='none';
+        document.getElementById('tt-block-row').style.display='none';
+        document.getElementById('tt-stars').textContent = found.stars?found.stars.toLocaleString()+'★':'N/A';
+      }
+    } else {
+      document.getElementById('tooltip').style.display='none';
+    }
+  } else if(found){
+    const tt = document.getElementById('tooltip');
+    tt.style.left=(mx+18)+'px';
+    tt.style.top=(my-40)+'px';
+  }
+});
+
+canvas && canvas.addEventListener('mouseleave',()=>{
+  hoveredNode=null;
+  document.getElementById('tooltip').style.display='none';
+  dragging=null;
+});
+
+canvas && canvas.addEventListener('mousedown',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const found=getNodeAt(mx,my);
+  if(found){dragging=found.id;dragOffset={x:mx-found.x,y:my-found.y};}
+});
+
+canvas && canvas.addEventListener('mouseup',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  if(dragging!==null){
+    const wasDragging=nodes.find(n=>n.id===dragging);
+    dragging=null;
+    if(wasDragging){
+      const dx=mx-dragOffset.x-wasDragging.x+dragOffset.x;
+      const dy=my-dragOffset.y-wasDragging.y+dragOffset.y;
+      if(Math.abs(dx)<5&&Math.abs(dy)<5) selectNode(wasDragging);
+    }
+    return;
+  }
+  const found=getNodeAt(mx,my);
+  if(found) selectNode(found);
+  else { selectedNode=null; document.getElementById('inspector-empty').style.display='flex'; document.getElementById('inspector-content').style.display='none'; }
+});
+
+function selectNode(n){
+  selectedNode=n;
+  document.getElementById('inspector-empty').style.display='none';
+  const ic=document.getElementById('inspector-content');
+  ic.style.display='block';
+  const col=C[n.cat]||'#fff';
+  const catLabels={agent:'Agent Framework',vector:'Vector Database',tool:'LLM Tool',research:'Research',gap:'Critical Gap'};
+  let html=`<div class="insp-header">
+    <div class="insp-cat-badge cat-${n.cat}" style="background:${col}22;color:${col}">${catLabels[n.cat]||n.cat}</div>
+    <div class="insp-name">${n.name}</div>
+    <div class="insp-desc">${n.desc||'Active open source project in the AI infrastructure ecosystem.'}</div>
+  </div><div class="insp-body">`;
+
+  if(n.cat==='gap'){
+    const pct=Math.round(n.criticality*10);
+    html+=`<div class="insp-section">
+      <div class="crit-bar-wrap">
+        <div class="crit-label"><span>CRITICALITY SCORE</span></div>
+        <div class="crit-score-big">${n.criticality}</div>
+        <div class="crit-bar-bg"><div class="crit-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+    </div>
+    <div class="insp-section">
+      <div class="insp-section-title">Impact</div>
+      <div class="insp-row"><span class="insp-row-label">Blocking</span><span class="insp-row-val" style="color:var(--red)">${n.blocking} projects</span></div>
+      <div class="insp-row"><span class="insp-row-label">Effort est.</span><span class="insp-row-val">~${n.effort} person-weeks</span></div>
+      <div class="insp-row"><span class="insp-row-label">Status</span><span class="insp-row-val" style="color:${n.status==='claimed'?'var(--amber)':'var(--lime)'}">${n.status.toUpperCase()}</span></div>
+    </div>`;
+    if(n.skills){
+      html+=`<div class="insp-section"><div class="insp-section-title">Required Skills</div><div class="skill-tags">${n.skills.map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div></div>`;
+    }
+    if(n.blockingProjects&&n.blockingProjects.length){
+      html+=`<div class="insp-section"><div class="insp-section-title">Blocked Projects (top ${n.blockingProjects.length})</div><div class="blocking-list">${n.blockingProjects.map(p=>`<div class="blocking-item">${p}<span>BLOCKED</span></div>`).join('')}</div></div>`;
+    }
+    html+=`</div>`;
+    if(n.status==='open') html+=`<button class="claim-btn">CLAIM THIS GAP</button>`;
+  } else {
+    html+=`<div class="insp-section">
+      <div class="insp-section-title">Stats</div>
+      ${n.stars?`<div class="insp-row"><span class="insp-row-label">GitHub Stars</span><span class="insp-row-val">${n.stars.toLocaleString()}</span></div>`:''}
+      <div class="insp-row"><span class="insp-row-label">Category</span><span class="insp-row-val" style="color:${col}">${catLabels[n.cat]}</span></div>
+      <div class="insp-row"><span class="insp-row-label">Status</span><span class="insp-row-val" style="color:var(--lime)">ACTIVE</span></div>
+    </div>`;
+    const connIds=getConnectedIds(n.id);
+    const connNodes=[...connIds].map(id=>nodes.find(nd=>nd.id===id)).filter(Boolean).slice(0,6);
+    if(connNodes.length){
+      html+=`<div class="insp-section"><div class="insp-section-title">Connected Nodes (${connIds.size})</div><div class="conn-list">${connNodes.map(cn=>`<div class="conn-item" onclick="selectNode(nodes.find(n=>n.id==${cn.id}))"><div class="conn-dot" style="background:${C[cn.cat]}"></div>${cn.name}</div>`).join('')}</div></div>`;
+    }
+    html+=`</div>`;
+  }
+  ic.innerHTML=html;
+}
+
+// VIEW SWITCHING
+function showView(v){
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>{
+    const views=['map','gaps','signals'];
+    b.classList.toggle('active',views[i]===v);
+  });
+  document.getElementById('map-canvas').style.display = v==='map'?'block':'none';
+  document.getElementById('filter-bar').style.display = v==='map'?'flex':'none';
+  document.getElementById('legend').style.display = v==='map'?'block':'none';
+  document.getElementById('map-stats').style.display = v==='map'?'flex':'none';
+  document.getElementById('tooltip').style.display = 'none';
+  document.getElementById('gaps-view').style.display = v==='gaps'?'block':'none';
+  document.getElementById('signals-view').style.display = v==='signals'?'block':'none';
+  if(v==='map'){
+    if(!animFrame) loop();
+  } else {
+    if(animFrame){cancelAnimationFrame(animFrame);animFrame=null;}
+  }
+}
+
+// FILTER
+function setFilter(f){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.f-'+f).classList.add('active');
+  const visCount = f==='all'?nodes.length:nodes.filter(n=>n.cat===f).length;
+  document.getElementById('map-nodes-count').textContent=visCount;
+}
+
+// POPULATE GAPS VIEW
+function populateGaps(){
+  const grid=document.getElementById('gaps-grid');
+  grid.innerHTML=GAPS_DATA.map(g=>`
+    <div class="gap-card" onclick="showView('map')">
+      <div class="gc-top">
+        <div class="gc-score">${g.criticality}</div>
+        <div class="gc-status status-${g.status}">${g.status.toUpperCase()}</div>
+      </div>
+      <div class="gc-title">${g.name}</div>
+      <div class="gc-desc">${g.desc}</div>
+      <div class="gc-bar-bg"><div class="gc-bar-fill" style="width:${Math.round(g.criticality*10)}%"></div></div>
+      <div class="gc-meta">
+        <div class="gc-meta-item">Effort: <span>~${g.effort} weeks</span></div>
+        <div class="gc-meta-item">Skills: <span>${g.skills.slice(0,2).join(', ')}</span></div>
+      </div>
+      <div class="gc-blocking-badge">⚠ Blocking <strong>${g.blocking}</strong> projects</div>
+    </div>
+  `).join('');
+}
+
+// TICKER
+function buildTicker(){
+  const track=document.getElementById('ticker-track');
+  const items = [...GAPS_DATA,...GAPS_DATA].map(g=>
+    `<span class="ticker-item">
+      <span class="ti-name">${g.name}</span>
+      <span class="ti-score">${g.criticality}/10</span>
+      <span style="color:var(--muted);font-size:9px">BLOCKING ${g.blocking}</span>
+    </span>
+    <span class="ticker-sep">◆</span>`
+  ).join('');
+  track.innerHTML=items;
+}
+
+// FEED
+const FEED_ITEMS=[
+  {name:'AutoGen v0.4.2',cat:'agent',stars:'34.2k',type:'commit'},
+  {name:'Chroma 0.6.1',cat:'vector',stars:'15.8k',type:'release'},
+  {name:'Gap: Agent Trust',cat:'gap',crit:'9.3',type:'detected'},
+  {name:'LiteLLM 1.52',cat:'tool',stars:'12.4k',type:'commit'},
+  {name:'Weaviate v1.24',cat:'vector',stars:'8.9k',type:'release'},
+  {name:'Gap: Memory Standard',cat:'gap',crit:'8.8',type:'detected'},
+  {name:'CrewAI 0.86',cat:'agent',stars:'22.1k',type:'commit'},
+  {name:'Ollama 0.5.13',cat:'tool',stars:'18.2k',type:'commit'},
+  {name:'vLLM 0.6.4',cat:'tool',stars:'25.3k',type:'release'},
+  {name:'DSPy 2.5.1',cat:'agent',stars:'17.8k',type:'commit'},
+  {name:'LanceDB 0.14',cat:'vector',stars:'4.2k',type:'release'},
+  {name:'Gap: Payment Rail',cat:'gap',crit:'8.4',type:'detected'},
+  {name:'LangFuse 3.4',cat:'tool',stars:'6.1k',type:'commit'},
+  {name:'Milvus 2.5.2',cat:'vector',stars:'29.1k',type:'release'},
+  {name:'Agno v1.3.0',cat:'agent',stars:'8.4k',type:'commit'},
+  {name:'Gap: Task Format',cat:'gap',crit:'6.9',type:'detected'},
+  {name:'MemGPT 0.4',cat:'agent',stars:'11.2k',type:'commit'},
+  {name:'Qdrant 1.13',cat:'vector',stars:'21.4k',type:'release'},
+  {name:'Ragas 0.2.6',cat:'tool',stars:'7.3k',type:'commit'},
+  {name:'Haystack v2.9',cat:'agent',stars:'16.1k',type:'commit'},
+];
+
+function getTime(){
+  const d=new Date();
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')+':'+d.getSeconds().toString().padStart(2,'0');
+}
+
+function initFeed(){
+  const list=document.getElementById('feed-list');
+  const initial = FEED_ITEMS.slice(0,12);
+  initial.forEach(item=>{
+    list.appendChild(makeFeedEl(item,getTime()));
+  });
+}
+
+function makeFeedEl(item,time){
+  const el=document.createElement('div');
+  el.className='feed-item';
+  el.innerHTML=`
+    <div class="feed-time">${time}</div>
+    <div class="feed-name">${item.name}</div>
+    <div class="feed-meta">
+      <span class="feed-cat cat-${item.cat}">${item.cat}</span>
+      ${item.stars?`<span>${item.stars}★</span>`:''}
+      ${item.crit?`<span style="color:var(--red)">CRIT ${item.crit}</span>`:''}
+      <span style="color:var(--muted)">${item.type}</span>
+    </div>`;
+  return el;
+}
+
+let feedIdx=0;
+function addFeedItem(){
+  const list=document.getElementById('feed-list');
+  const item=FEED_ITEMS[feedIdx%FEED_ITEMS.length];
+  feedIdx++;
+  const el=makeFeedEl(item,getTime());
+  el.classList.add('new');
+  list.insertBefore(el,list.firstChild);
+  if(list.children.length>30) list.removeChild(list.lastChild);
+}
+
+// STATS INCREMENT
+function incrementStats(){
+  const r=document.getElementById('stat-repos');
+  const ing=document.getElementById('stat-ingested');
+  r.textContent=(parseInt(r.textContent.replace(/,/g,''))+Math.floor(Math.random()*3)).toLocaleString();
+  ing.textContent=(parseInt(ing.textContent.replace(/,/g,''))+Math.floor(Math.random()*8+2)).toLocaleString();
+}
+
+// SIGNALS VIEW
+function populateSignals(){
+  const SIGS=[
+    {time:'12:47:23',type:'launch',icon:'⬆',col:'var(--lime)',title:'LangChain v0.3.20 released',desc:'Major update to LCEL with streaming improvements and new memory abstractions.'},
+    {time:'12:44:11',type:'gap-detected',icon:'⚠',col:'var(--red)',title:'Gap detected: Agent Trust Verification Protocol (9.3/10)',desc:'Analysis of 847 agent framework repos reveals no standard for inter-agent identity verification. Blocking: AutoGen, CrewAI, MetaGPT, Agency Swarm + 19 others.'},
+    {time:'12:41:05',type:'duplicate',icon:'=',col:'var(--amber)',title:'Duplication cluster: 14 repos solving identical agent memory problem',desc:'Repositories MemGPT, Letta, MemoryOS, AgentMemory, and 10 others are implementing functionally equivalent memory systems with no coordination.'},
+    {time:'12:38:44',type:'commit',icon:'↑',col:'var(--blue)',title:'AutoGen v0.4.2 — 47 commits in last 24h',desc:'High activity detected. Significant refactor of GroupChat manager. MagenticOne integration in progress.'},
+    {time:'12:35:20',type:'paper',icon:'◈',col:'var(--purple)',title:'New arXiv paper: "Unified Agent Communication Protocol"',desc:'cs.MA:2501.xxxxx — Proposes a standardized inter-agent communication spec. Cites 34 existing frameworks. High relevance to gap #1.'},
+    {time:'12:31:09',type:'gap-claimed',icon:'✓',col:'var(--amber)',title:'Gap claimed: Interpretability Primitive Library (7.9/10)',desc:'@eleutherai_dev has claimed the interpretability primitives gap. 90-day build window starts now.'},
+    {time:'12:28:55',type:'commit',icon:'↑',col:'var(--teal)',title:'Qdrant v1.13 — performance benchmarks 40% faster',desc:'New HNSW index implementation. Relevant to 23 tracked vector-dependent agent frameworks.'},
+    {time:'12:25:12',type:'signal',icon:'◉',col:'var(--muted)',title:'Reddit: 847 upvotes — "Why can\'t agents talk to each other?"',desc:'r/LocalLLaMA post identifying the trust verification gap organically. High community resonance. Maps to gap #1.'},
+    {time:'12:21:40',type:'funding',icon:'$',col:'var(--lime)',title:'Funding signal: Crew.ai raises $100M Series B',desc:'Agent framework funding continues. Investment thesis validates agent coordination space. Gap #7 (Universal Task Format) becomes commercially urgent.'},
+  ];
+  const list=document.getElementById('signals-list');
+  list.innerHTML=SIGS.map(s=>`
+    <div class="signal-row">
+      <div class="sig-time">${s.time}</div>
+      <div class="sig-icon" style="background:${s.col}22;color:${s.col}">${s.icon}</div>
+      <div class="sig-body">
+        <div class="sig-title">${s.title}</div>
+        <div class="sig-desc">${s.desc}</div>
+        <div class="sig-tags">
+          <span class="feed-cat" style="background:${s.col}22;color:${s.col};padding:2px 8px;border-radius:2px;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase">${s.type}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// INIT
+initNodes();
+initCanvas();
+// Bind canvas events after init
+canvas.addEventListener('mousemove', e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  if(dragging!==null){
+    const n=nodes.find(n=>n.id===dragging);
+    if(n){n.x=mx-dragOffset.x;n.y=my-dragOffset.y;}
+    return;
+  }
+  const found=getNodeAt(mx,my);
+  if(found!==hoveredNode){
+    hoveredNode=found;
+    canvas.style.cursor=found?'pointer':'crosshair';
+    if(found){
+      const tt=document.getElementById('tooltip');
+      tt.style.display='block';
+      tt.style.left=(mx+18)+'px';
+      tt.style.top=Math.max(0,my-40)+'px';
+      document.getElementById('tt-name').textContent=found.name;
+      document.getElementById('tt-cat').textContent=found.cat.toUpperCase();
+      document.getElementById('tt-cat').style.color=C[found.cat];
+      if(found.cat==='gap'){
+        document.getElementById('tt-stars-row').style.display='none';
+        document.getElementById('tt-crit-row').style.display='flex';
+        document.getElementById('tt-block-row').style.display='flex';
+        document.getElementById('tt-crit').textContent=found.criticality+'/10';
+        document.getElementById('tt-block').textContent=found.blocking+' projects';
+      } else {
+        document.getElementById('tt-stars-row').style.display='flex';
+        document.getElementById('tt-crit-row').style.display='none';
+        document.getElementById('tt-block-row').style.display='none';
+        document.getElementById('tt-stars').textContent=found.stars?found.stars.toLocaleString()+'★':'N/A';
+      }
+    } else {
+      document.getElementById('tooltip').style.display='none';
+    }
+  } else if(found){
+    const tt=document.getElementById('tooltip');
+    tt.style.left=(mx+18)+'px';
+    tt.style.top=Math.max(0,my-40)+'px';
+  }
+});
+canvas.addEventListener('mouseleave',()=>{hoveredNode=null;document.getElementById('tooltip').style.display='none';dragging=null;});
+canvas.addEventListener('mousedown',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  const found=getNodeAt(mx,my);
+  if(found){dragging=found.id;dragOffset={x:mx-found.x,y:my-found.y};}
+});
+canvas.addEventListener('mouseup',e=>{
+  if(dragging!==null){
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    const wasDragging=nodes.find(n=>n.id===dragging);
+    const prevDragId=dragging;
+    dragging=null;
+    if(wasDragging){
+      const startX=wasDragging.x-dragOffset.x+dragOffset.x;
+      const dist=Math.hypot(mx-wasDragging.x-dragOffset.x,my-wasDragging.y-dragOffset.y);
+      if(dist<8) selectNode(wasDragging);
+    }
+    return;
+  }
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  const found=getNodeAt(mx,my);
+  if(found) selectNode(found);
+  else {selectedNode=null;document.getElementById('inspector-empty').style.display='flex';document.getElementById('inspector-content').style.display='none';}
+});
+
+populateGaps();
+populateSignals();
+buildTicker();
+initFeed();
+loop();
+
+setInterval(addFeedItem, 4200);
+setInterval(incrementStats, 3000);
+</script>
+</body>
+</html>
