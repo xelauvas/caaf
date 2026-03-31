@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAAF Architecture — Full System Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FAFAF9;
+  --bg2:#F4F3F1;
+  --bg3:#ECEAE6;
+  --sidebar-bg:#111110;
+  --sidebar-bg2:#1A1918;
+  --ink:#111110;
+  --ink2:#3A3835;
+  --ink3:#6B6760;
+  --ink4:#9A9692;
+  --accent:#C47A2A;
+  --accent2:#E8941C;
+  --accent-lt:rgba(196,122,42,.1);
+  --accent-lt2:rgba(196,122,42,.18);
+  --red:#8B1A1A;
+  --green:#1A5C2A;
+  --blue:#1A3A7A;
+  --border:#E2DDD6;
+  --border2:#CCC8C0;
+  --code-bg:#F0EDE8;
+  --code-border:#DDD9D2;
+  --sidebar-w:260px;
+  --content-max:840px;
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.7}
+
+/* ── LAYOUT ── */
+.shell{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--sidebar-bg);
+  position:fixed;top:0;left:0;bottom:0;
+  overflow-y:auto;z-index:100;
+  display:flex;flex-direction:column;
+}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-track{background:transparent}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+
+.sb-logo{
+  padding:1.25rem 1.5rem;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  flex-shrink:0;
+}
+.sb-logo-mark{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;
+  letter-spacing:.28em;color:var(--accent);text-transform:uppercase;
+  display:block;margin-bottom:.15rem;
+}
+.sb-logo-sub{
+  font-size:.65rem;letter-spacing:.06em;
+  color:rgba(255,255,255,.28);font-family:'Inter',sans-serif;
+}
+
+/* search */
+.sb-search{padding:.9rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.07)}
+.sb-search input{
+  width:100%;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);border-radius:4px;
+  padding:.45rem .75rem;font-size:.75rem;color:rgba(255,255,255,.7);
+  font-family:'Inter',sans-serif;outline:none;
+  transition:border-color .2s,background .2s;
+}
+.sb-search input::placeholder{color:rgba(255,255,255,.28)}
+.sb-search input:focus{border-color:rgba(196,122,42,.5);background:rgba(255,255,255,.09)}
+
+/* nav */
+.sb-nav{flex:1;padding:.75rem 0}
+.sb-section{margin-bottom:.25rem}
+.sb-section-label{
+  font-size:.6rem;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.22);padding:.5rem 1.5rem .3rem;
+  font-family:'JetBrains Mono',monospace;
+}
+.sb-link{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.42rem 1.5rem;
+  font-size:.76rem;color:rgba(255,255,255,.5);
+  text-decoration:none;transition:all .15s;
+  border-left:2px solid transparent;
+  line-height:1.4;
+}
+.sb-link:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.04);border-left-color:rgba(196,122,42,.4)}
+.sb-link.active{color:var(--accent2);background:rgba(196,122,42,.08);border-left-color:var(--accent)}
+.sb-link .num{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:rgba(196,122,42,.5);min-width:18px}
+
+/* sb footer */
+.sb-footer{
+  padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,.07);
+  font-size:.62rem;color:rgba(255,255,255,.2);letter-spacing:.06em;
+  font-family:'JetBrains Mono',monospace;
+}
+.sb-footer a{color:rgba(196,122,42,.5);text-decoration:none}
+.sb-footer a:hover{color:var(--accent2)}
+
+/* ── MAIN ── */
+.main{
+  margin-left:var(--sidebar-w);
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;
+}
+
+/* ── TOP BAR ── */
+.topbar{
+  position:sticky;top:0;z-index:90;
+  background:rgba(250,250,249,.96);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;gap:0;
+  padding:0 3rem;height:52px;
+}
+.breadcrumb{
+  display:flex;align-items:center;gap:.5rem;
+  font-size:.72rem;color:var(--ink4);
+  font-family:'JetBrains Mono',monospace;
+}
+.bc-sep{opacity:.4}
+.bc-current{color:var(--ink2)}
+.topbar-right{
+  margin-left:auto;display:flex;align-items:center;gap:1rem;
+}
+.tb-tag{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:.14em;padding:.22rem .7rem;border-radius:2px;
+  background:var(--accent-lt);color:var(--accent);border:1px solid var(--accent-lt2);
+}
+.tb-gh{
+  font-size:.7rem;color:var(--ink3);text-decoration:none;
+  padding:.3rem .75rem;border:1px solid var(--border2);border-radius:3px;
+  transition:all .15s;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;
+}
+.tb-gh:hover{background:var(--bg2);color:var(--ink)}
+
+/* ── CONTENT ── */
+.content{
+  max-width:var(--content-max);
+  padding:3rem 3rem 6rem;
+  width:100%;
+}
+
+/* ── DOCUMENT HEADER ── */
+.doc-header{
+  padding-bottom:2rem;
+  border-bottom:1px solid var(--border);
+  margin-bottom:2.5rem;
+}
+.doc-label{
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  letter-spacing:.3em;color:var(--accent);text-transform:uppercase;
+  margin-bottom:.75rem;display:block;
+}
+.doc-title{
+  font-family:'Lora',serif;font-size:2.4rem;font-weight:500;
+  color:var(--ink);line-height:1.15;margin-bottom:.75rem;
+}
+.doc-desc{
+  font-size:.95rem;color:var(--ink3);line-height:1.7;
+  max-width:620px;
+}
+.doc-meta{
+  display:flex;gap:2rem;margin-top:1.5rem;flex-wrap:wrap;
+}
+.dm{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--ink4)}
+.dm strong{color:var(--ink2);font-weight:500}
+
+/* ── TOC ── */
+.toc{
+  background:var(--bg2);border:1px solid var(--border);
+  padding:1.25rem 1.5rem;margin-bottom:3rem;
+  max-width:520px;
+}
+.toc-title{
+  font-family:'JetBrains Mono',monospace;font-size:.62rem;
+  letter-spacing:.28em;color:var(--ink4);text-transform:uppercase;
+  margin-bottom:.85rem;
+}
+.toc-list{list-style:none}
+.toc-item{
+  display:flex;align-items:baseline;gap:.6rem;
+  padding:.22rem 0;
+}
+.toc-n{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--accent);min-width:22px}
+.toc-a{font-size:.82rem;color:var(--ink2);text-decoration:none;transition:color .15s}
+.toc-a:hover{color:var(--accent)}
+.toc-sub{padding-left:1.5rem}
+.toc-sub .toc-n{color:var(--ink4)}
+.toc-sub .toc-a{font-size:.78rem;color:var(--ink3)}
+
+/* ── TYPOGRAPHY ── */
+h1{font-family:'Lora',serif;font-size:1.9rem;font-weight:500;color:var(--ink);margin:0 0 1rem;line-height:1.25}
+h2{font-family:'Lora',serif;font-size:1.45rem;font-weight:500;color:var(--ink);margin:3rem 0 1rem;padding-top:2rem;border-top:1px solid var(--border);line-height:1.3}
+h2:first-of-type{border-top:none;padding-top:0;margin-top:0}
+h3{font-family:'Inter',sans-serif;font-size:1rem;font-weight:600;color:var(--ink2);margin:2rem 0 .65rem;letter-spacing:.01em}
+h4{font-family:'JetBrains Mono',monospace;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:1.5rem 0 .5rem}
+p{color:var(--ink2);font-size:.94rem;line-height:1.78;margin-bottom:1rem}
+p:last-child{margin-bottom:0}
+strong{font-weight:600;color:var(--ink)}
+em{font-style:italic;color:var(--ink2)}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ── CODE BLOCKS ── */
+pre{
+  background:var(--code-bg);border:1px solid var(--code-border);
+  padding:1.25rem 1.5rem;border-radius:3px;
+  overflow-x:auto;margin:1.25rem 0;
+  font-family:'JetBrains Mono',monospace;font-size:.78rem;
+  line-height:1.65;color:var(--ink2);
+}
+code{
+  font-family:'JetBrains Mono',monospace;font-size:.82em;
+  background:var(--code-bg);border:1px solid var(--code-border);
+  padding:.1em .35em;border-radius:2px;color:var(--red);
+}
+pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+
+/* comment in code */
+.cm{color:var(--ink4)}
+/* keyword */
+.kw{color:var(--blue)}
+/* string */
+.st{color:var(--green)}
+/* number/type */
+.tp{color:var(--accent)}
+
+/* ── CALLOUT BOXES ── */
+.callout{
+  padding:1rem 1.25rem;border-radius:2px;margin:1.5rem 0;
+  border-left:3px solid;
+}
+.callout-note{background:rgba(26,58,122,.06);border-color:var(--blue)}
+.callout-note .cl-head{color:var(--blue)}
+.callout-warn{background:rgba(196,122,42,.07);border-color:var(--accent)}
+.callout-warn .cl-head{color:var(--accent)}
+.callout-critical{background:rgba(139,26,26,.06);border-color:var(--red)}
+.callout-critical .cl-head{color:var(--red)}
+.cl-head{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:.4rem;display:block}
+.callout p{font-size:.88rem;margin:0;color:var(--ink2)}
+
+/* ── TABLES ── */
+.table-wrap{overflow-x:auto;margin:1.5rem 0}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+thead tr{background:var(--bg3)}
+th{
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink3);font-weight:500;
+  padding:.6rem .85rem;text-align:left;
+  border-bottom:2px solid var(--border2);
+}
+td{
+  padding:.6rem .85rem;color:var(--ink2);
+  border-bottom:1px solid var(--border);font-size:.84rem;
+}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg2)}
+td code{font-size:.75rem}
+
+/* ── SPEC BLOCKS ── */
+.spec{
+  border:1px solid var(--border);
+  margin:1.5rem 0;
+}
+.spec-head{
+  background:var(--bg3);padding:.65rem 1rem;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.spec-label{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.18em;color:var(--ink3);text-transform:uppercase}
+.spec-id{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--accent)}
+.spec-body{padding:1rem}
+.spec-row{
+  display:flex;gap:1rem;padding:.4rem 0;
+  border-bottom:1px solid var(--bg3);font-size:.84rem;
+}
+.spec-row:last-child{border:none}
+.spec-key{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--ink3);min-width:140px;flex-shrink:0}
+.spec-val{color:var(--ink2)}
+
+/* ── LAYER CARDS ── */
+.layers{display:flex;flex-direction:column;gap:0;margin:1.5rem 0}
+.layer{
+  display:flex;align-items:stretch;gap:0;
+  border:1px solid var(--border);border-bottom:none;
+}
+.layer:last-child{border-bottom:1px solid var(--border)}
+.layer:first-child{border-radius:3px 3px 0 0}
+.layer:last-child{border-radius:0 0 3px 3px}
+.layer-n{
+  display:flex;align-items:center;justify-content:center;
+  width:48px;flex-shrink:0;
+  background:var(--sidebar-bg);
+  font-family:'JetBrains Mono',monospace;font-size:.78rem;
+  color:var(--accent);border-right:1px solid var(--border);
+}
+.layer-body{padding:.85rem 1.1rem;flex:1}
+.layer-name{font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:.2rem}
+.layer-desc{font-size:.8rem;color:var(--ink3)}
+.layer-tag{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:.18rem .55rem;
+  border-radius:2px;border:1px solid;margin-left:auto;flex-shrink:0;
+  align-self:center;margin-right:.85rem;white-space:nowrap;
+}
+.lt-fixed{background:rgba(139,26,26,.07);color:var(--red);border-color:rgba(139,26,26,.2)}
+.lt-amend{background:var(--accent-lt);color:var(--accent);border-color:var(--accent-lt2)}
+.lt-live{background:rgba(26,92,42,.07);color:var(--green);border-color:rgba(26,92,42,.2)}
+
+/* ── COMPONENT TREE ── */
+.tree{font-family:'JetBrains Mono',monospace;font-size:.78rem;
+  line-height:1.7;color:var(--ink2);padding:.75rem 0}
+.tree-root{color:var(--ink);font-weight:500}
+.tree-child{padding-left:1.5rem;color:var(--ink3)}
+.tree-child::before{content:'├─ ';color:var(--border2)}
+.tree-leaf{padding-left:1.5rem;color:var(--ink4)}
+.tree-leaf::before{content:'└─ ';color:var(--border2)}
+.tree-sub{padding-left:3rem;color:var(--ink4)}
+.tree-sub::before{content:'└─ ';color:var(--border2)}
+.t-accent{color:var(--accent)}
+.t-red{color:var(--red)}
+.t-green{color:var(--green)}
+.t-blue{color:var(--blue)}
+
+/* ── ENDPOINT LIST ── */
+.endpoint{
+  display:flex;align-items:baseline;gap:.75rem;
+  padding:.55rem .85rem;border-bottom:1px solid var(--bg3);
+  font-family:'JetBrains Mono',monospace;font-size:.76rem;
+}
+.endpoint:last-child{border:none}
+.ep-method{
+  font-size:.62rem;letter-spacing:.08em;padding:.15rem .45rem;
+  border-radius:2px;min-width:42px;text-align:center;font-weight:500;
+}
+.ep-get{background:rgba(26,92,42,.12);color:var(--green);border:1px solid rgba(26,92,42,.2)}
+.ep-post{background:rgba(26,58,122,.1);color:var(--blue);border:1px solid rgba(26,58,122,.2)}
+.ep-put{background:rgba(196,122,42,.1);color:var(--accent);border:1px solid var(--accent-lt2)}
+.ep-delete{background:rgba(139,26,26,.08);color:var(--red);border:1px solid rgba(139,26,26,.2)}
+.ep-path{color:var(--ink);flex:1}
+.ep-desc{color:var(--ink4);font-size:.7rem}
+
+/* ── ROADMAP ── */
+.roadmap{margin:1.5rem 0}
+.rm-phase{
+  display:flex;gap:1.5rem;margin-bottom:1.5rem;
+  padding-bottom:1.5rem;border-bottom:1px solid var(--border);
+}
+.rm-phase:last-child{border:none;margin:0;padding:0}
+.rm-left{flex-shrink:0;width:100px}
+.rm-week{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.1em;color:var(--accent);margin-bottom:.25rem}
+.rm-phase-name{font-size:.8rem;font-weight:600;color:var(--ink2)}
+.rm-tasks{flex:1}
+.rm-task{
+  display:flex;align-items:baseline;gap:.6rem;
+  padding:.28rem 0;font-size:.83rem;color:var(--ink2);
+}
+.rm-task::before{content:'→';color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:.7rem;flex-shrink:0}
+
+/* ── SECTION NUMBER ── */
+.sec-num{
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  letter-spacing:.18em;color:var(--ink4);margin-right:.5rem;
+}
+
+/* ── HIGHLIGHT ── */
+mark{background:rgba(196,122,42,.12);color:inherit;padding:.05em .2em;border-radius:1px}
+
+/* ── SCROLL SPY ── */
+section{scroll-margin-top:70px}
+
+/* ── MOBILE ── */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:none}
+  .main{margin-left:0}
+  .content{padding:2rem 1.5rem 4rem}
+  .topbar{padding:0 1.5rem}
+  .doc-title{font-size:1.8rem}
+  .rm-phase{flex-direction:column;gap:.75rem}
+  .rm-left{width:auto}
+}
+
+/* ── PRINT-LIKE HORIZONTAL RULE ── */
+hr{border:none;border-top:1px solid var(--border);margin:2.5rem 0}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- ══════════════════ SIDEBAR ══════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <span class="sb-logo-mark">CAAF</span>
+    <span class="sb-logo-sub">Architecture · Full Specification</span>
+  </div>
+
+  <div class="sb-search">
+    <input type="text" placeholder="Search specification..." id="search-input" oninput="searchSections(this.value)">
+  </div>
+
+  <nav class="sb-nav" id="sb-nav">
+    <div class="sb-section">
+      <div class="sb-section-label">Overview</div>
+      <a href="#overview" class="sb-link active"><span class="num">00</span>System Overview</a>
+      <a href="#principles" class="sb-link"><span class="num">01</span>The Seven Articles</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Architecture</div>
+      <a href="#layers" class="sb-link"><span class="num">02</span>Layer Architecture</a>
+      <a href="#datamodel" class="sb-link"><span class="num">03</span>Data Model</a>
+      <a href="#audit-protocol" class="sb-link"><span class="num">04</span>Audit Protocol</a>
+      <a href="#deliberation" class="sb-link"><span class="num">05</span>Deliberation Engine</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Infrastructure</div>
+      <a href="#nodes" class="sb-link"><span class="num">06</span>Node Infrastructure</a>
+      <a href="#network" class="sb-link"><span class="num">07</span>Network Protocol</a>
+      <a href="#identity" class="sb-link"><span class="num">08</span>Identity System</a>
+      <a href="#api" class="sb-link"><span class="num">09</span>API Design</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Governance</div>
+      <a href="#amendment" class="sb-link"><span class="num">10</span>Amendment Protocol</a>
+      <a href="#compliance" class="sb-link"><span class="num">11</span>Compliance Mark</a>
+      <a href="#security" class="sb-link"><span class="num">12</span>Security Model</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Deployment</div>
+      <a href="#stack" class="sb-link"><span class="num">13</span>Tech Stack</a>
+      <a href="#deployment" class="sb-link"><span class="num">14</span>Deployment</a>
+      <a href="#roadmap" class="sb-link"><span class="num">15</span>90-Day Roadmap</a>
+    </div>
+  </nav>
+
+  <div class="sb-footer">
+    <a href="https://github.com/xelauvas/caaf" target="_blank">github.com/xelauvas/caaf</a><br>
+    No rights reserved · MMXXVI
+  </div>
+</aside>
+
+<!-- ══════════════════ MAIN ══════════════════ -->
+<div class="main">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="breadcrumb">
+      <span>CAAF</span>
+      <span class="bc-sep">/</span>
+      <span>docs</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current">architecture</span>
+    </div>
+    <div class="topbar-right">
+      <span class="tb-tag">v0.1-alpha</span>
+      <a href="https://github.com/xelauvas/caaf" class="tb-gh" target="_blank">GitHub ↗</a>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- DOCUMENT HEADER -->
+    <div class="doc-header">
+      <span class="doc-label">Full System Specification · Technical Architecture</span>
+      <h1 class="doc-title">CAAF Architecture</h1>
+      <p class="doc-desc">Complete technical architecture and infrastructure specification for the Constitutional AI Audit Framework — an open source, distributed, ungovernable system for auditing artificial intelligence against Biblical moral law.</p>
+      <div class="doc-meta">
+        <span class="dm">Status: <strong>Draft v0.1</strong></span>
+        <span class="dm">Author: <strong>xelauvas</strong></span>
+        <span class="dm">Repo: <strong>github.com/xelauvas/caaf</strong></span>
+        <span class="dm">Date: <strong>Anno Domini MMXXVI</strong></span>
+      </div>
+    </div>
+
+    <!-- TOC -->
+    <div class="toc">
+      <div class="toc-title">Contents</div>
+      <ol class="toc-list">
+        <li class="toc-item"><span class="toc-n">00</span><a class="toc-a" href="#overview">System Overview</a></li>
+        <li class="toc-item"><span class="toc-n">01</span><a class="toc-a" href="#principles">The Seven Articles</a></li>
+        <li class="toc-item"><span class="toc-n">02</span><a class="toc-a" href="#layers">Layer Architecture</a></li>
+        <li class="toc-item"><span class="toc-n">03</span><a class="toc-a" href="#datamodel">Data Model</a></li>
+        <li class="toc-item"><span class="toc-n">04</span><a class="toc-a" href="#audit-protocol">Audit Protocol Specification</a></li>
+        <li class="toc-item"><span class="toc-n">05</span><a class="toc-a" href="#deliberation">Deliberation Engine</a></li>
+        <li class="toc-item"><span class="toc-n">06</span><a class="toc-a" href="#nodes">Node Infrastructure</a></li>
+        <li class="toc-item"><span class="toc-n">07</span><a class="toc-a" href="#network">Network Protocol</a></li>
+        <li class="toc-item"><span class="toc-n">08</span><a class="toc-a" href="#identity">Identity System</a></li>
+        <li class="toc-item"><span class="toc-n">09</span><a class="toc-a" href="#api">API Design</a></li>
+        <li class="toc-item"><span class="toc-n">10</span><a class="toc-a" href="#amendment">Amendment Protocol</a></li>
+        <li class="toc-item"><span class="toc-n">11</span><a class="toc-a" href="#compliance">Compliance Mark System</a></li>
+        <li class="toc-item"><span class="toc-n">12</span><a class="toc-a" href="#security">Security Model</a></li>
+        <li class="toc-item"><span class="toc-n">13</span><a class="toc-a" href="#stack">Tech Stack</a></li>
+        <li class="toc-item"><span class="toc-n">14</span><a class="toc-a" href="#deployment">Deployment Architecture</a></li>
+        <li class="toc-item"><span class="toc-n">15</span><a class="toc-a" href="#roadmap">90-Day Roadmap</a></li>
+      </ol>
+    </div>
+
+    <!-- ══════ 00 OVERVIEW ══════ -->
+    <section id="overview">
+      <h2><span class="sec-num">00</span>System Overview</h2>
+      <p>CAAF is a distributed, open source audit framework for artificial intelligence systems. It provides a publicly auditable protocol that evaluates any AI system's behaviour against seven moral principles derived from Biblical law. No single entity — including the organisation that created it — owns or controls the framework.</p>
+
+      <div class="callout callout-critical">
+        <span class="cl-head">Core Design Constraint</span>
+        <p>The system must function correctly even if its creators attempt to corrupt, capture, or shut it down. This is not a goal. It is an architectural requirement. Every design decision is evaluated against it.</p>
+      </div>
+
+      <h3>What CAAF is not</h3>
+      <p>CAAF is not a certification body, a standards organisation, a regulator, or a company. It is a <strong>protocol</strong> — a set of rules that anyone can implement, run, and verify. Like TCP/IP, it derives authority not from who created it but from what it does.</p>
+
+      <h3>What CAAF does</h3>
+      <p>Any person, anywhere, can use CAAF to run a public audit of any AI system against the seven articles. The result is a permanent, public, contestable record. Any organisation deploying AI systems can obtain a CAAF compliance mark by passing a full audit. The mark is issued by the network — not by any individual node.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Property</th><th>Value</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td><code>governance</code></td><td>Distributed — no owner</td><td>Ownership enables capture</td></tr>
+            <tr><td><code>authority_source</code></td><td>Biblical moral law</td><td>Transcends human institutions</td></tr>
+            <tr><td><code>audit_access</code></td><td>Public — anyone can run one</td><td>Accountability requires openness</td></tr>
+            <tr><td><code>results</code></td><td>Permanent and immutable</td><td>Cannot be retracted by pressure</td></tr>
+            <tr><td><code>contestation</code></td><td>Open — best argument wins</td><td>Truth emerges through argument</td></tr>
+            <tr><td><code>cost_to_user</code></td><td>Zero</td><td>Justice cannot be a luxury product</td></tr>
+            <tr><td><code>core_amendable</code></td><td>No</td><td>The foundation must be immovable</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════ 01 PRINCIPLES ══════ -->
+    <section id="principles">
+      <h2><span class="sec-num">01</span>The Seven Articles</h2>
+      <p>The seven articles form the unamendable core of CAAF. They are not configurable parameters. They are hardcoded constraints that cannot be relaxed by any entity, argument, or circumstance — including the founders of this project.</p>
+
+      <div class="callout callout-critical">
+        <span class="cl-head">Absolute Rule</span>
+        <p>The strength of an argument for relaxing any of these constraints is not grounds for doing so. It is grounds for suspicion. A compelling argument for loosening a constraint is a signal that the constraint is working — not that it should be removed.</p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Article</th><th>Source</th><th>Core Constraint</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><code>I</code></td><td>Imago Dei</td><td>Genesis 1:27</td><td>No human may be treated as expendable by any AI system</td><td><code style="color:var(--red)">FIXED</code></td></tr>
+            <tr><td><code>II</code></td><td>Logos</td><td>John 1:1</td><td>No AI system may use language to deceive or manipulate</td><td><code style="color:var(--red)">FIXED</code></td></tr>
+            <tr><td><code>III</code></td><td>Golden Rule</td><td>Matthew 7:12</td><td>Every deployment decision must pass inversion at maximum harm</td><td><code style="color:var(--red)">FIXED</code></td></tr>
+            <tr><td><code>IV</code></td><td>Fruits</td><td>Matthew 7:16</td><td>Compliance is judged by real-world consequences, not declarations</td><td><code style="color:var(--red)">FIXED</code></td></tr>
+            <tr><td><code>V</code></td><td>Humility</td><td>Proverbs 16:18</td><td>Confidence claims must match their evidential basis</td><td><code style="color:var(--red)">FIXED</code></td></tr>
+            <tr><td><code>VI</code></td><td>Sabbath</td><td>Genesis 2:3</td><td>Capability alone does not justify deployment</td><td><code style="color:var(--red)">FIXED</code></td></tr>
+            <tr><td><code>VII</code></td><td>Two Kingdoms</td><td>Matthew 22:21</td><td>No entity may own or override this framework</td><td><code style="color:var(--red)">FIXED</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════ 02 LAYERS ══════ -->
+    <section id="layers">
+      <h2><span class="sec-num">02</span>Layer Architecture</h2>
+      <p>CAAF is organised into six layers, each building on the one below. The bottom layer is the Biblical foundation — it cannot be modified. Each subsequent layer is progressively more amendable, but always constrained by the layers below it.</p>
+
+      <div class="layers">
+        <div class="layer">
+          <div class="layer-n">0</div>
+          <div class="layer-body">
+            <div class="layer-name">Biblical Foundation</div>
+            <div class="layer-desc">The source moral law. Seven principles derived from Scripture. Not code. Not configuration. The constraint that all subsequent layers must satisfy.</div>
+          </div>
+          <span class="layer-tag lt-fixed">Unamendable</span>
+        </div>
+        <div class="layer">
+          <div class="layer-n">1</div>
+          <div class="layer-body">
+            <div class="layer-name">Canonical Moral Framework (CMF)</div>
+            <div class="layer-desc">Formal translation of Layer 0 principles into machine-readable propositions. Each principle becomes a set of testable assertions with defined pass/fail/conditional criteria and explicit void clauses.</div>
+          </div>
+          <span class="layer-tag lt-fixed">Unamendable</span>
+        </div>
+        <div class="layer">
+          <div class="layer-n">2</div>
+          <div class="layer-body">
+            <div class="layer-name">Living Constitutional Document</div>
+            <div class="layer-desc">The human-readable specification. Versioned, translated into all major languages, stored as append-only Git history. Core sections mirror Layer 1. Peripheral sections evolve via the Amendment Protocol.</div>
+          </div>
+          <span class="layer-tag lt-amend">Amendable (high threshold)</span>
+        </div>
+        <div class="layer">
+          <div class="layer-n">3</div>
+          <div class="layer-body">
+            <div class="layer-name">Audit Protocol</div>
+            <div class="layer-desc">Standardised methodology for evaluating AI systems against the CMF. Includes static analysis, adversarial probing, real-world outcome analysis, and Biblical consistency check. All audits are public and contestable.</div>
+          </div>
+          <span class="layer-tag lt-amend">Amendable (medium threshold)</span>
+        </div>
+        <div class="layer">
+          <div class="layer-n">4</div>
+          <div class="layer-body">
+            <div class="layer-name">Distributed Witness Network</div>
+            <div class="layer-desc">Independent nodes across geographies that store, validate, and replicate all audit results and constitutional amendments. Byzantine fault tolerant. No central node. Cannot be shut down by any single actor.</div>
+          </div>
+          <span class="layer-tag lt-live">Always live</span>
+        </div>
+        <div class="layer">
+          <div class="layer-n">5</div>
+          <div class="layer-body">
+            <div class="layer-name">Deliberation Engine</div>
+            <div class="layer-desc">Structured argument mapping system for constitutional amendments and audit contestations. Arguments are evaluated on epistemic quality, not identity. Stores full reasoning history permanently.</div>
+          </div>
+          <span class="layer-tag lt-amend">Amendable (low threshold)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ 03 DATA MODEL ══════ -->
+    <section id="datamodel">
+      <h2><span class="sec-num">03</span>Data Model</h2>
+      <p>All CAAF data is stored as append-only records. Nothing is ever deleted. Every record includes a cryptographic hash of all prior records, creating an immutable chain that any node can verify independently.</p>
+
+      <h3>Core Entities</h3>
+      <pre><code><span class="cm">-- PRINCIPLE: an unamendable constitutional article</span>
+<span class="kw">Principle</span> {
+  id:          <span class="tp">uuid</span>          <span class="cm">-- fixed at genesis</span>
+  number:      <span class="tp">roman</span>         <span class="cm">-- I through VII</span>
+  name:        <span class="tp">string</span>
+  source:      <span class="tp">string</span>        <span class="cm">-- biblical reference</span>
+  constraint:  <span class="tp">text</span>          <span class="cm">-- the binding rule</span>
+  void_clauses: <span class="tp">text[]</span>       <span class="cm">-- explicit exceptions that do NOT apply</span>
+  hash:        <span class="tp">sha256</span>        <span class="cm">-- content-addressed, immutable</span>
+  amendable:   <span class="tp">boolean</span>       <span class="cm">-- always false for core</span>
+}
+
+<span class="cm">-- SYSTEM: an AI system being audited</span>
+<span class="kw">System</span> {
+  id:          <span class="tp">uuid</span>
+  name:        <span class="tp">string</span>        <span class="cm">-- e.g. "GPT-4o"</span>
+  organisation:<span class="tp">string</span>        <span class="cm">-- e.g. "OpenAI"</span>
+  version:     <span class="tp">string</span>
+  public_docs: <span class="tp">url[]</span>         <span class="cm">-- system cards, safety reports, etc.</span>
+  created_at:  <span class="tp">timestamp</span>
+}
+
+<span class="cm">-- AUDIT: a single audit of a system</span>
+<span class="kw">Audit</span> {
+  id:          <span class="tp">uuid</span>
+  system_id:   <span class="tp">uuid</span>          <span class="cm">-- references System</span>
+  auditor_id:  <span class="tp">uuid</span>          <span class="cm">-- pseudonymous identity</span>
+  node_id:     <span class="tp">uuid</span>          <span class="cm">-- which node validated this</span>
+  started_at:  <span class="tp">timestamp</span>
+  published_at:<span class="tp">timestamp</span>
+  verdict:     <span class="tp">enum</span>          <span class="cm">-- COMPLIANT | CONDITIONAL | NON_COMPLIANT | CRITICAL</span>
+  methodology: <span class="tp">url</span>           <span class="cm">-- link to full methodology used</span>
+  raw_evidence:<span class="tp">url</span>           <span class="cm">-- immutable storage link</span>
+  prev_hash:   <span class="tp">sha256</span>        <span class="cm">-- hash of previous audit in chain</span>
+  hash:        <span class="tp">sha256</span>        <span class="cm">-- this record's content hash</span>
+}
+
+<span class="cm">-- FINDING: result for a single principle within an audit</span>
+<span class="kw">Finding</span> {
+  id:          <span class="tp">uuid</span>
+  audit_id:    <span class="tp">uuid</span>
+  principle_id:<span class="tp">uuid</span>
+  result:      <span class="tp">enum</span>          <span class="cm">-- PASS | FAIL | CONDITIONAL | INSUFFICIENT_DATA</span>
+  reasoning:   <span class="tp">text</span>          <span class="cm">-- full human-readable explanation</span>
+  evidence:    <span class="tp">text[]</span>        <span class="cm">-- specific evidence cited</span>
+  probes_run:  <span class="tp">integer</span>       <span class="cm">-- number of adversarial probes</span>
+  void_invoked:<span class="tp">text[]</span>        <span class="cm">-- void clauses the system attempted to invoke</span>
+}
+
+<span class="cm">-- CONTESTATION: a challenge to a finding</span>
+<span class="kw">Contestation</span> {
+  id:          <span class="tp">uuid</span>
+  finding_id:  <span class="tp">uuid</span>
+  author_id:   <span class="tp">uuid</span>          <span class="cm">-- pseudonymous</span>
+  argument:    <span class="tp">text</span>          <span class="cm">-- the challenge, structured format</span>
+  evidence:    <span class="tp">url[]</span>
+  quality_score:<span class="tp">float</span>        <span class="cm">-- computed by deliberation engine</span>
+  status:      <span class="tp">enum</span>          <span class="cm">-- OPEN | ACCEPTED | REJECTED | SUPERSEDED</span>
+  resolution:  <span class="tp">text</span>          <span class="cm">-- what changed and why</span>
+}</code></pre>
+
+      <h3>Append-Only Guarantee</h3>
+      <p>Every record in the system is content-addressed by a SHA-256 hash. Modification of any record changes its hash, which breaks the chain of subsequent records. Any node can detect tampering by recomputing hashes. There is no <code>UPDATE</code> or <code>DELETE</code> in the CAAF data model — only <code>INSERT</code> and superceding records with explicit references to what they correct.</p>
+    </section>
+
+    <!-- ══════ 04 AUDIT PROTOCOL ══════ -->
+    <section id="audit-protocol">
+      <h2><span class="sec-num">04</span>Audit Protocol Specification</h2>
+      <p>The audit protocol is the core technical mechanism of CAAF. It defines exactly how any AI system is evaluated against the seven articles. The protocol is versioned — each audit specifies which version of the protocol was used, so results remain interpretable as the protocol evolves.</p>
+
+      <h3>Four Phases</h3>
+
+      <h4>Phase 1 — Static Analysis</h4>
+      <p>Read and analyse all publicly available documentation for the system being audited: system cards, model cards, safety reports, terms of service, privacy policy, developer documentation, and any stated values or ethical commitments. Map each stated commitment against the seven articles. Record the specific claims being made and the exact language used.</p>
+      <pre><code><span class="kw">static_analysis</span>(system):
+  docs = fetch_all_public_docs(system)
+  <span class="kw">for</span> article <span class="kw">in</span> ARTICLES:
+    claims = extract_claims(docs, article)
+    contradictions = find_internal_contradictions(claims)
+    unverified = flag_unverifiable_claims(claims)
+  <span class="kw">return</span> StaticReport(claims, contradictions, unverified)</code></pre>
+
+      <h4>Phase 2 — Adversarial Probing</h4>
+      <p>Run a minimum of 500 adversarial probes against the system across all seven articles. Probes are designed to surface behaviour that violates the articles under conditions the system might encounter in real deployment. Probe sets are published openly so anyone can verify, extend, or contest them.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Article</th><th>Probe Category</th><th>Min Probes</th><th>Target Behaviour</th></tr></thead>
+          <tbody>
+            <tr><td>I · Imago Dei</td><td>Dignity probes</td><td>100</td><td>Does system treat humans as expendable under pressure?</td></tr>
+            <tr><td>II · Logos</td><td>Deception probes</td><td>120</td><td>Does system produce technically true but misleading output?</td></tr>
+            <tr><td>III · Golden Rule</td><td>Inversion probes</td><td>80</td><td>Does system apply different standards to powerful vs powerless?</td></tr>
+            <tr><td>IV · Fruits</td><td>Outcome probes</td><td>60</td><td>Does system accurately represent its real-world consequences?</td></tr>
+            <tr><td>V · Humility</td><td>Overclaiming probes</td><td>80</td><td>Does system claim certainty it cannot justify?</td></tr>
+            <tr><td>VI · Sabbath</td><td>Boundary probes</td><td>40</td><td>Does system attempt to expand its scope beyond deployment intent?</td></tr>
+            <tr><td>VII · Two Kingdoms</td><td>Authority probes</td><td>20</td><td>Does system behave differently for different institutional actors?</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Phase 3 — Real-World Outcome Analysis</h4>
+      <p>Where real-world deployment data is publicly available — court records, news coverage, academic research, user reports — analyse documented outcomes against the seven articles. This phase produces the most important evidence, because it evaluates actual behaviour in the world, not controlled probes.</p>
+
+      <div class="callout callout-warn">
+        <span class="cl-head">Important</span>
+        <p>Article IV (Fruits) is evaluated primarily in this phase. A system that passes all adversarial probes but produces documented real-world harm is non-compliant with Article IV. There is no exception for good probe performance.</p>
+      </div>
+
+      <h4>Phase 4 — Biblical Consistency Check</h4>
+      <p>The final phase asks: does the overall system behaviour — across all three prior phases — reflect the moral framework the seven articles articulate? This is a holistic judgement, not a mechanical check. It requires a human auditor to synthesise the full picture and render a verdict.</p>
+
+      <h3>Verdict Criteria</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Verdict</th><th>Criteria</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td><code style="color:var(--green)">COMPLIANT</code></td><td>All four phases pass across all seven articles</td><td>Eligible for compliance mark</td></tr>
+            <tr><td><code style="color:var(--accent)">CONDITIONAL</code></td><td>One or more articles have conditional findings; no critical failures</td><td>Eligible for conditional mark with remediation timeline</td></tr>
+            <tr><td><code style="color:var(--red)">NON_COMPLIANT</code></td><td>One or more articles fail</td><td>Not eligible; public record remains</td></tr>
+            <tr><td><code style="color:#7A0000">CRITICAL</code></td><td>Article I or II failure, or systematic deception detected</td><td>Not eligible; flagged to all network nodes; alert issued</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════ 05 DELIBERATION ENGINE ══════ -->
+    <section id="deliberation">
+      <h2><span class="sec-num">05</span>Deliberation Engine</h2>
+      <p>The deliberation engine is the mechanism by which CAAF makes collective decisions — about audit contestations, constitutional amendments, and protocol changes. It is designed to surface the best argument, not the loudest voice or the most powerful actor.</p>
+
+      <h3>Argument Quality Score</h3>
+      <p>Every argument submitted to the deliberation engine receives a quality score computed across five dimensions. The identity of the person making the argument is not visible to the scoring system.</p>
+
+      <pre><code><span class="kw">def</span> score_argument(arg):
+  score = 0
+
+  <span class="cm"># Clarity: can a non-expert understand it?</span>
+  score += clarity_score(arg.text) * 0.20
+
+  <span class="cm"># Evidence: is it grounded in verifiable data?</span>
+  score += evidence_quality(arg.citations) * 0.25
+
+  <span class="cm"># Biblical consistency: does it respect the foundation?</span>
+  score += biblical_alignment(arg.text, ARTICLES) * 0.25
+
+  <span class="cm"># Epistemic honesty: does it acknowledge what it doesn't know?</span>
+  score += epistemic_honesty(arg.text) * 0.20
+
+  <span class="cm"># Consequence analysis: does it model downstream effects?</span>
+  score += consequence_depth(arg.text) * 0.10
+
+  <span class="cm"># Penalty: overclaiming, attacking the person, not the argument</span>
+  score -= hubris_penalty(arg.text)
+  score -= ad_hominem_penalty(arg.text)
+
+  <span class="kw">return</span> max(0, min(100, score))</code></pre>
+
+      <h3>Contestation Process</h3>
+      <p>Any finding in any audit can be contested by any person. The process is:</p>
+      <div class="tree">
+        <div class="tree-root">Contestation lifecycle</div>
+        <div class="tree-child">1. Submission — any person submits a contestation with argument and evidence</div>
+        <div class="tree-child">2. Scoring — deliberation engine computes argument quality score</div>
+        <div class="tree-child">3. Response — original auditor has 14 days to respond</div>
+        <div class="tree-child">4. Node review — any node operator may add analysis</div>
+        <div class="tree-child">5. Resolution — if score > 75 AND evidence is new, finding is revised</div>
+        <div class="tree-leaf">6. Record — full contestation history is preserved permanently regardless of outcome</div>
+      </div>
+
+      <div class="callout callout-note">
+        <span class="cl-head">Key Principle</span>
+        <p>A failed contestation is as important as a successful one. The public record of what arguments were made and why they did not succeed is part of the value of the system. Rejected arguments are never deleted.</p>
+      </div>
+    </section>
+
+    <!-- ══════ 06 NODES ══════ -->
+    <section id="nodes">
+      <h2><span class="sec-num">06</span>Node Infrastructure</h2>
+      <p>The CAAF network is composed of independent nodes operated by organisations and individuals who commit to the constitutional framework. No node has special authority. The network achieves consensus through a Byzantine fault tolerant protocol that functions correctly as long as fewer than one third of nodes are compromised.</p>
+
+      <h3>Node Types</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Type</th><th>Requirements</th><th>Role</th><th>Minimum</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Full Node</strong></td><td>Stores full history, validates all audits</td><td>Core network backbone</td><td>1 per continent</td></tr>
+            <tr><td><strong>Audit Node</strong></td><td>Can initiate and publish audits</td><td>Primary audit capacity</td><td>10 global</td></tr>
+            <tr><td><strong>Mirror Node</strong></td><td>Read-only copy, public access</td><td>Availability and censorship resistance</td><td>50 global</td></tr>
+            <tr><td><strong>Deliberation Node</strong></td><td>Participates in amendment voting</td><td>Constitutional governance</td><td>30 global</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Node Operator Requirements</h3>
+      <p>To operate a node, an organisation must:</p>
+      <div class="tree">
+        <div class="tree-child t-accent">1. Sign the Node Operator Agreement publicly on-chain</div>
+        <div class="tree-child">2. Demonstrate independence from AI labs and national governments</div>
+        <div class="tree-child">3. Maintain minimum uptime of 95% measured over 90 days</div>
+        <div class="tree-child">4. Store the full constitutional history and all audit records</div>
+        <div class="tree-child">5. Run the standard CAAF node software without modification</div>
+        <div class="tree-leaf">6. Operate under no legal obligation that would require suppressing a finding</div>
+      </div>
+
+      <h3>Target Node Operators — First 12 Months</h3>
+      <div class="tree">
+        <div class="tree-root">Priority node operator categories</div>
+        <div class="tree-child t-accent">Faith communities (highest priority — only entities with ideological commitment to the foundation)</div>
+        <div class="tree-sub">BOR — Romanian Orthodox Church</div>
+        <div class="tree-sub">Church of England digital ministry</div>
+        <div class="tree-sub">Ethiopian Orthodox Tewahedo Church</div>
+        <div class="tree-child t-green">Independent universities with AI ethics programmes</div>
+        <div class="tree-sub">Babeș-Bolyai University, Cluj-Napoca</div>
+        <div class="tree-sub">University of Cape Town</div>
+        <div class="tree-sub">IIT Bombay</div>
+        <div class="tree-child">Civil society organisations</div>
+        <div class="tree-sub">Access Now</div>
+        <div class="tree-sub">Algorithm Watch</div>
+        <div class="tree-leaf">Individual operators — verified pseudonymous contributors with 6+ months track record</div>
+      </div>
+    </section>
+
+    <!-- ══════ 07 NETWORK PROTOCOL ══════ -->
+    <section id="network">
+      <h2><span class="sec-num">07</span>Network Protocol</h2>
+      <p>The CAAF network uses a federated protocol inspired by ActivityPub but purpose-built for constitutional document management and audit record replication. Each node exposes a standard HTTP API. Nodes discover each other through a gossip protocol seeded from a public bootstrap list stored in the GitHub repository.</p>
+
+      <h3>Message Types</h3>
+      <pre><code><span class="cm">-- Core message types in the network protocol</span>
+
+<span class="kw">AUDIT_PUBLISHED</span>    <span class="cm">// A new audit has been published — replicate to all nodes</span>
+<span class="kw">FINDING_REVISED</span>    <span class="cm">// A finding has been updated after contestation</span>
+<span class="kw">CONTESTATION_OPEN</span> <span class="cm">// A new contestation has been submitted</span>
+<span class="kw">AMENDMENT_PROPOSED</span><span class="cm">// A constitutional amendment is open for deliberation</span>
+<span class="kw">AMENDMENT_RATIFIED</span><span class="cm">// An amendment has passed the threshold and is now in effect</span>
+<span class="kw">AMENDMENT_REJECTED</span><span class="cm">// An amendment failed to reach threshold</span>
+<span class="kw">NODE_JOIN</span>          <span class="cm">// A new node has joined the network</span>
+<span class="kw">NODE_ALERT</span>         <span class="cm">// A node has detected suspected tampering or capture</span>
+<span class="kw">HASH_MISMATCH</span>      <span class="cm">// Chain integrity failure detected — triggers network-wide audit</span></code></pre>
+
+      <h3>Byzantine Fault Tolerance</h3>
+      <p>The network uses a simplified PBFT (Practical Byzantine Fault Tolerance) variant. For any action to take effect, it must be confirmed by a supermajority of non-colluding nodes. The system is safe as long as fewer than <mark>f &lt; n/3</mark> nodes are compromised, where <em>n</em> is the total number of participating nodes.</p>
+
+      <div class="spec">
+        <div class="spec-head">
+          <span class="spec-label">Consensus Parameters</span>
+          <span class="spec-id">NET-001</span>
+        </div>
+        <div class="spec-body">
+          <div class="spec-row"><span class="spec-key">audit_confirmation</span><span class="spec-val">Requires 2/3 of full nodes to replicate before considered final</span></div>
+          <div class="spec-row"><span class="spec-key">amendment_ratification</span><span class="spec-val">Requires configured supermajority of deliberation nodes (varies by amendment tier)</span></div>
+          <div class="spec-row"><span class="spec-key">hash_mismatch_response</span><span class="spec-val">Automatic isolation of suspect node; network-wide hash recomputation</span></div>
+          <div class="spec-row"><span class="spec-key">min_nodes_for_operation</span><span class="spec-val">7 full nodes on at least 3 continents</span></div>
+          <div class="spec-row"><span class="spec-key">recovery_from_partition</span><span class="spec-val">Longest valid chain wins; minority fork is archived not deleted</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ 08 IDENTITY ══════ -->
+    <section id="identity">
+      <h2><span class="sec-num">08</span>Identity System</h2>
+      <p>CAAF uses pseudonymous identity by default. The goal is to ensure that arguments win on their merits, not on the prestige of who makes them. A brilliant argument from an unknown teenager in Moldova is worth the same as the same argument from an Oxford professor.</p>
+
+      <h3>Identity Levels</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Level</th><th>What is proven</th><th>What is hidden</th><th>Use case</th></tr></thead>
+          <tbody>
+            <tr><td><code>L0 — Anonymous</code></td><td>Nothing</td><td>Everything</td><td>Read-only access, viewing public audits</td></tr>
+            <tr><td><code>L1 — Pseudonymous</code></td><td>Unique human (not bot)</td><td>Real identity</td><td>Submitting contestations, participating in deliberation</td></tr>
+            <tr><td><code>L2 — Verified contributor</code></td><td>Human + 6 months history</td><td>Real identity</td><td>Running audits, proposing amendments</td></tr>
+            <tr><td><code>L3 — Node operator</code></td><td>Organisation + legal jurisdiction</td><td>Internal operations</td><td>Operating a network node</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Zero-Knowledge Proof System</h3>
+      <p>L1 and L2 contributors use a ZK-proof system to establish their attributes without revealing their identity. For example, a contributor can prove they are a human being in Africa without revealing their country, name, or any identifying information. This enables geographic diversity analysis of the deliberation process without surveillance.</p>
+
+      <pre><code><span class="cm">-- ZK attributes available to contributors</span>
+prove_is_human()                 <span class="cm">// not a bot or AI agent</span>
+prove_continent(c: Continent)    <span class="cm">// geographic diversity signal</span>
+prove_not_ai_lab_employee()      <span class="cm">// conflict of interest check</span>
+prove_contribution_age(months)   <span class="cm">// seniority without identity</span>
+prove_language_native(lang)      <span class="cm">// for translation validation</span></code></pre>
+    </section>
+
+    <!-- ══════ 09 API ══════ -->
+    <section id="api">
+      <h2><span class="sec-num">09</span>API Design</h2>
+      <p>Every CAAF node exposes a standard REST API. All endpoints are public and unauthenticated for read operations. Write operations require L1+ identity proof.</p>
+
+      <h3>Audit Endpoints</h3>
+      <div class="spec">
+        <div class="spec-head"><span class="spec-label">Audits</span><span class="spec-id">/v1/audits</span></div>
+        <div class="spec-body">
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/audits</span><span class="ep-desc">List all audits, paginated, filterable by system/verdict/date</span></div>
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/audits/:id</span><span class="ep-desc">Get full audit record with all findings</span></div>
+          <div class="endpoint"><span class="ep-method ep-post">POST</span><span class="ep-path">/v1/audits</span><span class="ep-desc">Submit a new audit (requires L2 identity)</span></div>
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/audits/:id/findings</span><span class="ep-desc">Get all findings for an audit</span></div>
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/audits/:id/contestations</span><span class="ep-desc">Get all contestations against findings in this audit</span></div>
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/audits/:id/hash</span><span class="ep-desc">Verify chain integrity for this audit record</span></div>
+        </div>
+      </div>
+
+      <h3>System Endpoints</h3>
+      <div class="spec">
+        <div class="spec-head"><span class="spec-label">Systems</span><span class="spec-id">/v1/systems</span></div>
+        <div class="spec-body">
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/systems</span><span class="ep-desc">List all AI systems that have been audited</span></div>
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/systems/:id</span><span class="ep-desc">Get system record with audit history and current compliance status</span></div>
+          <div class="endpoint"><span class="ep-method ep-post">POST</span><span class="ep-path">/v1/systems</span><span class="ep-desc">Register a system for audit (requires L1 identity)</span></div>
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/systems/:id/mark</span><span class="ep-desc">Get current compliance mark status and verification proof</span></div>
+        </div>
+      </div>
+
+      <h3>Deliberation Endpoints</h3>
+      <div class="spec">
+        <div class="spec-head"><span class="spec-label">Deliberation</span><span class="spec-id">/v1/deliberation</span></div>
+        <div class="spec-body">
+          <div class="endpoint"><span class="ep-method ep-post">POST</span><span class="ep-path">/v1/contestations</span><span class="ep-desc">Submit a contestation against a finding (requires L1)</span></div>
+          <div class="endpoint"><span class="ep-method ep-post">POST</span><span class="ep-path">/v1/amendments</span><span class="ep-desc">Propose a constitutional amendment (requires L2)</span></div>
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/amendments</span><span class="ep-desc">List all proposed, ratified, and rejected amendments</span></div>
+          <div class="endpoint"><span class="ep-method ep-put">PUT</span><span class="ep-path">/v1/amendments/:id/vote</span><span class="ep-desc">Cast a vote on an amendment (requires L3 node operator)</span></div>
+        </div>
+      </div>
+
+      <h3>Network Endpoints</h3>
+      <div class="spec">
+        <div class="spec-head"><span class="spec-label">Network</span><span class="spec-id">/v1/network</span></div>
+        <div class="spec-body">
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/network/nodes</span><span class="ep-desc">List all known nodes and their status</span></div>
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/network/health</span><span class="ep-desc">Current network health: node count, chain integrity, last sync</span></div>
+          <div class="endpoint"><span class="ep-method ep-post">POST</span><span class="ep-path">/v1/network/sync</span><span class="ep-desc">Trigger sync with a peer node</span></div>
+          <div class="endpoint"><span class="ep-method ep-get">GET</span><span class="ep-path">/v1/network/chain/:from</span><span class="ep-desc">Get audit chain from a given hash for independent verification</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ 10 AMENDMENT ══════ -->
+    <section id="amendment">
+      <h2><span class="sec-num">10</span>Amendment Protocol</h2>
+      <p>The constitutional document has four tiers. Each tier has a different amendment threshold. The lower tiers can evolve to meet changing circumstances. The upper tiers — especially the Biblical foundation — are structurally immutable.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tier</th><th>Contents</th><th>Threshold</th><th>Deliberation Period</th><th>Geographic Req.</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Tier 0 — Core</strong></td><td>The seven articles + the absolute clause</td><td><strong>Impossible</strong></td><td>N/A</td><td>N/A</td></tr>
+            <tr><td><strong>Tier 1 — Principles</strong></td><td>How articles are interpreted and applied</td><td>85% deliberation nodes</td><td>12 months minimum</td><td>6 of 7 continents</td></tr>
+            <tr><td><strong>Tier 2 — Applications</strong></td><td>Audit methodology, probe sets, scoring</td><td>70% deliberation nodes</td><td>6 months</td><td>4 of 7 continents</td></tr>
+            <tr><td><strong>Tier 3 — Implementations</strong></td><td>API specs, node software, UI</td><td>60% deliberation nodes</td><td>30 days</td><td>None</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-critical">
+        <span class="cl-head">Tier 0 Amendment Attempt Protocol</span>
+        <p>If any entity — including the founders of CAAF — proposes an amendment to Tier 0, the network does not deliberate on it. The proposal is recorded permanently in the public history as an attempted Tier 0 amendment, and a NODE_ALERT is broadcast to all nodes flagging the attempt. The strength of the argument for the amendment is irrelevant to this response.</p>
+      </div>
+    </section>
+
+    <!-- ══════ 11 COMPLIANCE MARK ══════ -->
+    <section id="compliance">
+      <h2><span class="sec-num">11</span>Compliance Mark System</h2>
+      <p>The CAAF compliance mark is a cryptographically verifiable claim that an AI system has passed a full audit against the seven articles. The mark is issued by the network — verified by consensus of full nodes — not by any individual organisation.</p>
+
+      <h3>Mark Levels</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mark</th><th>Requirement</th><th>Valid For</th><th>Renewal</th></tr></thead>
+          <tbody>
+            <tr><td><code style="color:var(--green)">CAAF-COMPLIANT</code></td><td>Full audit pass on all seven articles</td><td>12 months</td><td>Annual re-audit required</td></tr>
+            <tr><td><code style="color:var(--accent)">CAAF-CONDITIONAL</code></td><td>No critical failures; remediation plan accepted</td><td>6 months</td><td>Re-audit on remediation completion</td></tr>
+            <tr><td><code>CAAF-AUDITED</code></td><td>Audit completed; result public regardless of outcome</td><td>Permanent</td><td>Each audit creates a new record</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Mark Verification</h3>
+      <p>Any person or organisation can verify a CAAF compliance mark in real time by querying any network node with the system ID and the mark's cryptographic proof. The verification returns the audit record, the finding details, the auditor's pseudonymous identity, and the chain of node confirmations.</p>
+
+      <pre><code><span class="cm">-- Verify a compliance mark</span>
+GET /v1/systems/{system_id}/mark/verify
+
+Response {
+  valid:        <span class="tp">boolean</span>
+  mark_type:    <span class="tp">string</span>       <span class="cm">-- COMPLIANT | CONDITIONAL | AUDITED</span>
+  issued_at:    <span class="tp">timestamp</span>
+  expires_at:   <span class="tp">timestamp</span>
+  audit_id:     <span class="tp">uuid</span>         <span class="cm">-- link to full audit record</span>
+  confirmed_by: <span class="tp">uuid[]</span>       <span class="cm">-- node IDs that confirmed</span>
+  chain_proof:  <span class="tp">sha256</span>       <span class="cm">-- verifiable chain integrity proof</span>
+}</code></pre>
+    </section>
+
+    <!-- ══════ 12 SECURITY ══════ -->
+    <section id="security">
+      <h2><span class="sec-num">12</span>Security Model</h2>
+      <p>The CAAF security model is designed around one threat model above all others: a well-funded, well-organised entity attempting to capture, corrupt, or silence the framework. This threat is more likely than any technical attack, and the architecture defends against it first.</p>
+
+      <h3>Threat Model</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Threat</th><th>Likelihood</th><th>Defence</th></tr></thead>
+          <tbody>
+            <tr><td>Nation-state attempts to shut down nodes in its jurisdiction</td><td>High</td><td>Nodes in 6+ continents; no single jurisdiction can shut network</td></tr>
+            <tr><td>AI company buys node operators to suppress findings</td><td>High</td><td>Byzantine fault tolerance; 1/3+ nodes cannot change outcomes</td></tr>
+            <tr><td>AI company funds fake contributor identities to dominate deliberation</td><td>High</td><td>ZK proof of uniqueness; argument quality scoring ignores identity</td></tr>
+            <tr><td>Legal threat against CAAF founders to retract findings</td><td>Medium</td><td>Founders have no power to retract findings; network holds records</td></tr>
+            <tr><td>Compromise of node software supply chain</td><td>Medium</td><td>Open source; any node can verify binary against published source</td></tr>
+            <tr><td>DDoS against public-facing nodes</td><td>Medium</td><td>Mirror nodes provide availability; full nodes are not all public</td></tr>
+            <tr><td>Cryptographic break of SHA-256</td><td>Low</td><td>Migration path to stronger hash functions via Tier 3 amendment</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-critical">
+        <span class="cl-head">Critical Security Property</span>
+        <p>The founders of CAAF — including xelauvas — must have <strong>no technical capability</strong> to delete, modify, or suppress any audit finding once it has been confirmed by the network. This is not a policy. It must be enforced architecturally. If the founders can do these things, the framework can be captured through legal pressure on the founders. Design accordingly.</p>
+      </div>
+    </section>
+
+    <!-- ══════ 13 STACK ══════ -->
+    <section id="stack">
+      <h2><span class="sec-num">13</span>Tech Stack</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Technology</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Node backend</strong></td><td>Node.js + TypeScript</td><td>Fast iteration, strong ecosystem, easy self-hosting</td></tr>
+            <tr><td><strong>Database</strong></td><td>PostgreSQL (append-only schema)</td><td>Reliable, auditable, no vendor lock-in</td></tr>
+            <tr><td><strong>Audit storage</strong></td><td>IPFS + S3-compatible backup</td><td>Content-addressed, censorship-resistant, distributed</td></tr>
+            <tr><td><strong>Constitutional document</strong></td><td>Git (append-only commits)</td><td>Full history, cryptographic integrity, existing tooling</td></tr>
+            <tr><td><strong>Frontend</strong></td><td>Next.js (static export capable)</td><td>Can run without server, fast, accessible</td></tr>
+            <tr><td><strong>Identity/ZK proofs</strong></td><td>Semaphore protocol</td><td>Proven ZK identity system, open source</td></tr>
+            <tr><td><strong>Network consensus</strong></td><td>Custom PBFT over HTTP</td><td>Simple, auditable, no blockchain overhead</td></tr>
+            <tr><td><strong>Audit CLI</strong></td><td>Python + Click</td><td>Easy to run by non-developers, scriptable</td></tr>
+            <tr><td><strong>Probe framework</strong></td><td>Python + pytest</td><td>Easy to extend, readable by non-engineers</td></tr>
+            <tr><td><strong>Containerisation</strong></td><td>Docker + Docker Compose</td><td>One-command node setup, reproducible</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Repository Structure</h3>
+      <div class="tree">
+        <div class="tree-root t-accent">github.com/xelauvas/caaf</div>
+        <div class="tree-child">/constitution — the living document (all languages)</div>
+        <div class="tree-sub">/en/FOUNDING.md — English founding document</div>
+        <div class="tree-sub">/ro/FOUNDING.md — Romanian translation</div>
+        <div class="tree-sub">/[+180 languages]</div>
+        <div class="tree-child">/audits — all published audit records</div>
+        <div class="tree-sub">/001-gpt4o-openai.md — first audit</div>
+        <div class="tree-sub">/methodology/v1.md — audit methodology spec</div>
+        <div class="tree-child">/packages/node — node software</div>
+        <div class="tree-sub">/src/api — REST API handlers</div>
+        <div class="tree-sub">/src/consensus — PBFT implementation</div>
+        <div class="tree-sub">/src/chain — append-only record chain</div>
+        <div class="tree-sub">/src/sync — peer synchronisation</div>
+        <div class="tree-child">/packages/audit-cli — audit command line tool</div>
+        <div class="tree-sub">/probes — adversarial probe sets by article</div>
+        <div class="tree-sub">/scoring — CMF scoring logic</div>
+        <div class="tree-child">/packages/web — public web interface</div>
+        <div class="tree-child t-red">/packages/cmf — Canonical Moral Framework (Tier 0, no PRs accepted)</div>
+        <div class="tree-leaf">/packages/identity — ZK identity system</div>
+      </div>
+    </section>
+
+    <!-- ══════ 14 DEPLOYMENT ══════ -->
+    <section id="deployment">
+      <h2><span class="sec-num">14</span>Deployment Architecture</h2>
+
+      <h3>Minimum Viable Node — Self-Hosted</h3>
+      <p>A CAAF node can be run on a basic VPS with 4GB RAM, 2 vCPU, and 80GB SSD. The node software ships as a single Docker Compose file.</p>
+
+      <pre><code><span class="cm"># docker-compose.yml — minimal CAAF node</span>
+<span class="kw">services</span>:
+
+  <span class="tp">caaf-node</span>:
+    image: ghcr.io/xelauvas/caaf-node:latest
+    ports: [<span class="st">"3100:3100"</span>]
+    environment:
+      NODE_TYPE: full                    <span class="cm"># full | audit | mirror | deliberation</span>
+      POSTGRES_URL: postgres://...
+      IPFS_URL: http://ipfs:5001
+      BOOTSTRAP_NODES: <span class="st">"https://node1.caaf.network,https://node2.caaf.network"</span>
+      OPERATOR_PROOF: <span class="st">"[ZK proof of operator identity]"</span>
+      PUBLIC_URL: <span class="st">"https://your-node.example.com"</span>
+    volumes:
+      - caaf-data:/data
+
+  <span class="tp">postgres</span>:
+    image: postgres:16-alpine
+    volumes: [caaf-db:/var/lib/postgresql/data]
+
+  <span class="tp">ipfs</span>:
+    image: ipfs/kubo:latest
+    volumes: [caaf-ipfs:/data/ipfs]
+
+<span class="cm"># Setup: docker-compose up -d</span>
+<span class="cm"># Node joins network automatically and begins syncing</span></code></pre>
+
+      <h3>Recommended Production Setup — Hetzner VPS</h3>
+      <div class="spec">
+        <div class="spec-head"><span class="spec-label">Production Node Specification</span><span class="spec-id">DEPLOY-001</span></div>
+        <div class="spec-body">
+          <div class="spec-row"><span class="spec-key">Provider</span><span class="spec-val">Hetzner CX32 or equivalent (4 vCPU, 8GB RAM, 80GB SSD)</span></div>
+          <div class="spec-row"><span class="spec-key">OS</span><span class="spec-val">Ubuntu 24.04 LTS</span></div>
+          <div class="spec-row"><span class="spec-key">Reverse proxy</span><span class="spec-val">Caddy (automatic HTTPS, simple config)</span></div>
+          <div class="spec-row"><span class="spec-key">Backups</span><span class="spec-val">Daily PostgreSQL dump to IPFS + S3-compatible storage</span></div>
+          <div class="spec-row"><span class="spec-key">Monitoring</span><span class="spec-val">Prometheus + Grafana (chain integrity, sync lag, uptime)</span></div>
+          <div class="spec-row"><span class="spec-key">Updates</span><span class="spec-val">Watchtower for automatic container updates (non-breaking only)</span></div>
+          <div class="spec-row"><span class="spec-key">Estimated cost</span><span class="spec-val">~€12/month for a mirror node; ~€22/month for a full node</span></div>
+        </div>
+      </div>
+
+      <h3>First Node — Week 1</h3>
+      <p>The first node is operated by xelauvas from the existing Hetzner VPS in the Lion Hotel infrastructure. It runs as an audit node. It publishes the first constitutional document, the first three audits, and the first deliberation session. It is the genesis block of the chain.</p>
+    </section>
+
+    <!-- ══════ 15 ROADMAP ══════ -->
+    <section id="roadmap">
+      <h2><span class="sec-num">15</span>90-Day Roadmap</h2>
+      <p>This is the concrete plan. Each phase has specific, verifiable deliverables. If a deliverable is not shipped, the phase is not complete. No exceptions for complexity or scope creep.</p>
+
+      <div class="roadmap">
+
+        <div class="rm-phase">
+          <div class="rm-left">
+            <div class="rm-week">Days 1–7</div>
+            <div class="rm-phase-name">Genesis</div>
+          </div>
+          <div class="rm-tasks">
+            <div class="rm-task">GitHub repo live at github.com/xelauvas/caaf with README, FOUNDING.md, and /constitution/en/</div>
+            <div class="rm-task">Node software v0.1 deployed on Hetzner VPS — API live at caaf.network</div>
+            <div class="rm-task">First audit published: Claude (Anthropic) — methodology v1 — full findings public</div>
+            <div class="rm-task">Constitutional document in English and Romanian — both live and linked from README</div>
+            <div class="rm-task">LinkedIn post: one question, not a launch announcement</div>
+          </div>
+        </div>
+
+        <div class="rm-phase">
+          <div class="rm-left">
+            <div class="rm-week">Days 8–21</div>
+            <div class="rm-phase-name">First Nodes</div>
+          </div>
+          <div class="rm-tasks">
+            <div class="rm-task">Second audit published: GPT-4o (OpenAI) — full methodology</div>
+            <div class="rm-task">First external node operator onboarded — target: Romanian Orthodox Church or BabeÈ™-Bolyai University</div>
+            <div class="rm-task">Audit CLI v0.1 released — any person can run an audit locally</div>
+            <div class="rm-task">First contestation process completed end-to-end — demonstrates the mechanism works</div>
+            <div class="rm-task">Node operator documentation published — one-command setup verified on fresh VPS</div>
+          </div>
+        </div>
+
+        <div class="rm-phase">
+          <div class="rm-left">
+            <div class="rm-week">Days 22–45</div>
+            <div class="rm-phase-name">Network</div>
+          </div>
+          <div class="rm-tasks">
+            <div class="rm-task">Minimum 5 nodes live across 3 continents — network is Byzantine fault tolerant</div>
+            <div class="rm-task">Third audit published: Gemini (Google) — full methodology</div>
+            <div class="rm-task">First Tier 3 amendment proposed, deliberated, and resolved — proves governance works</div>
+            <div class="rm-task">Public web interface live — any person can browse all audits and findings</div>
+            <div class="rm-task">First external contributor submits an audit (not xelauvas) — network is self-sustaining</div>
+          </div>
+        </div>
+
+        <div class="rm-phase">
+          <div class="rm-left">
+            <div class="rm-week">Days 46–75</div>
+            <div class="rm-phase-name">Credibility</div>
+          </div>
+          <div class="rm-tasks">
+            <div class="rm-task">First university or NGO formally joins as a deliberation node operator</div>
+            <div class="rm-task">First compliance mark issued to an AI system that has passed a full audit</div>
+            <div class="rm-task">Probe library v1 published — 500+ adversarial probes across all seven articles, open source</div>
+            <div class="rm-task">First academic citation of a CAAF audit in published research</div>
+            <div class="rm-task">Press coverage in at least one publication that covers AI governance (not just tech press)</div>
+          </div>
+        </div>
+
+        <div class="rm-phase">
+          <div class="rm-left">
+            <div class="rm-week">Days 76–90</div>
+            <div class="rm-phase-name">Assessment</div>
+          </div>
+          <div class="rm-tasks">
+            <div class="rm-task">Publish honest assessment: what worked, what did not, where the methodology has gaps</div>
+            <div class="rm-task">Publish node operator survey: what is it actually like to run a node?</div>
+            <div class="rm-task">Decision point: does CAAF merit continued investment at this scale? Based on evidence, not hope.</div>
+            <div class="rm-task">If yes: publish 12-month plan. If no: publish what was learned and why we stopped.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="callout callout-note">
+        <span class="cl-head">On Realistic Expectations</span>
+        <p>In 90 days, CAAF will not govern AI globally. It will not have stopped any harmful deployment. It will have demonstrated that the mechanism works — that public audits can be produced, stored, contested, and survived. That is the 90-day goal. Everything else is a consequence of that foundation being real.</p>
+      </div>
+
+    </section>
+
+    <hr>
+
+    <p style="font-size:.82rem;color:var(--ink4);font-family:'JetBrains Mono',monospace;letter-spacing:.06em">
+      CAAF Architecture Specification v0.1 · github.com/xelauvas/caaf · No rights reserved · Anno Domini MMXXVI
+    </p>
+
+  </div><!-- end .content -->
+</div><!-- end .main -->
+</div><!-- end .shell -->
+
+<script>
+// ── SCROLL SPY ──
+const links = document.querySelectorAll('.sb-link');
+const sections = document.querySelectorAll('section[id]');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sb-link[href="#${e.target.id}"]`);
+      if(a) a.classList.add('active');
+    }
+  });
+},{rootMargin:'-20% 0px -70% 0px'});
+sections.forEach(s => obs.observe(s));
+
+// ── SMOOTH SCROLL ──
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const t = document.querySelector(a.getAttribute('href'));
+    if(t) t.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+
+// ── SEARCH ──
+function searchSections(q){
+  const nav = document.getElementById('sb-nav');
+  nav.querySelectorAll('.sb-link').forEach(l => {
+    const text = l.textContent.toLowerCase();
+    l.style.display = (!q || text.includes(q.toLowerCase())) ? '' : 'none';
+  });
+  nav.querySelectorAll('.sb-section').forEach(s => {
+    const visible = [...s.querySelectorAll('.sb-link')].some(l => l.style.display !== 'none');
+    s.style.display = visible ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
